@@ -1726,8 +1726,12 @@
       let photoUrls = uploadedPhotos.filter(p => typeof p === 'string' && !p.startsWith('data:'));
       const newBase64 = uploadedPhotos.filter(p => typeof p === 'string' && p.startsWith('data:'));
       if (useFirebase && newBase64.length > 0) {
-        const uploaded = await uploadPhotosToStorage(editItemId, newBase64);
-        if (uploaded) photoUrls = [...photoUrls, ...uploaded];
+        try {
+          const uploaded = await uploadPhotosToStorage(editItemId, newBase64);
+          photoUrls = uploaded && uploaded.length > 0 ? [...photoUrls, ...uploaded] : [...photoUrls, ...newBase64];
+        } catch (e) {
+          photoUrls = [...photoUrls, ...newBase64];
+        }
       } else if (!useFirebase && uploadedPhotos.length > 0) {
         photoUrls = [...uploadedPhotos];
       }
@@ -1782,10 +1786,16 @@
         if (uploadedPhotos.length > 0) {
           try {
             photoUrls = await uploadPhotosToStorage(newId);
-            if (photoUrls) await docRef.update({ photos: photoUrls });
+            if (photoUrls && photoUrls.length > 0) {
+              await docRef.update({ photos: photoUrls });
+            } else {
+              photoUrls = uploadedPhotos;
+              await docRef.update({ photos: photoUrls });
+            }
           } catch (e) {
             console.warn('Storage upload failed:', e);
-            showToast('⚠️ 사진 업로드 실패. Storage 규칙을 확인해주세요.');
+            photoUrls = uploadedPhotos;
+            await docRef.update({ photos: photoUrls });
           }
         }
         const newItem = {
