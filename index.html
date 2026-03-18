@@ -1182,7 +1182,10 @@
       }
     }, err => {
       console.warn('Firestore error:', err);
-      showToast('⚠️ 데이터를 불러오는 중 오류가 발생했습니다.');
+      const msg = err.code === 'permission-denied'
+        ? '⚠️ Firestore 읽기 권한이 없습니다. Firebase 콘솔에서 보안 규칙을 설정해주세요.'
+        : '⚠️ 데이터를 불러오는 중 오류가 발생했습니다.';
+      showToast(msg);
     });
     return items;
   }
@@ -1743,26 +1746,56 @@
     }
 
     if (useFirebase) {
-      const docRef = await db.collection(FIRESTORE_COLLECTION).add({
-        emoji: selectedEmoji,
-        photos: null,
-        title,
-        desc,
-        poster: posterName,
-        dept: '',
-        date,
-        status: 'available',
-        comments: [],
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
-      const newId = docRef.id;
-      if (uploadedPhotos.length > 0) {
-        const photoUrls = await uploadPhotosToStorage(newId);
-        if (photoUrls) await docRef.update({ photos: photoUrls });
+      try {
+        const docRef = await db.collection(FIRESTORE_COLLECTION).add({
+          emoji: selectedEmoji,
+          photos: null,
+          title,
+          desc,
+          poster: posterName,
+          dept: '',
+          date,
+          status: 'available',
+          comments: [],
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        const newId = docRef.id;
+        let photoUrls = null;
+        if (uploadedPhotos.length > 0) {
+          try {
+            photoUrls = await uploadPhotosToStorage(newId);
+            if (photoUrls) await docRef.update({ photos: photoUrls });
+          } catch (e) {
+            console.warn('Storage upload failed:', e);
+            showToast('⚠️ 사진 업로드 실패. Storage 규칙을 확인해주세요.');
+          }
+        }
+        const newItem = {
+          id: newId,
+          emoji: selectedEmoji,
+          photos: photoUrls || null,
+          title,
+          desc,
+          poster: posterName,
+          dept: '',
+          date,
+          status: 'available',
+          comments: []
+        };
+        items.unshift(newItem);
+        renderGrid();
+        const myPosts = JSON.parse(localStorage.getItem(MY_POSTS_KEY) || '[]');
+        myPosts.unshift(newId);
+        localStorage.setItem(MY_POSTS_KEY, JSON.stringify(myPosts));
+      } catch (e) {
+        console.error('Firestore add failed:', e);
+        if (e.code === 'permission-denied') {
+          showToast('⚠️ Firestore 쓰기 권한이 없습니다. Firebase 콘솔 → Firestore → 규칙에서 allow read, write: if true 설정해주세요.');
+        } else {
+          showToast('⚠️ 저장 실패: ' + (e.message || '알 수 없는 오류'));
+        }
+        return;
       }
-      const myPosts = JSON.parse(localStorage.getItem(MY_POSTS_KEY) || '[]');
-      myPosts.unshift(newId);
-      localStorage.setItem(MY_POSTS_KEY, JSON.stringify(myPosts));
     } else {
       const newItem = {
         id: Date.now(),
