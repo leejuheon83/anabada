@@ -597,6 +597,23 @@
     color: white;
   }
 
+  .btn-edit {
+    background: none;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'Pretendard', sans-serif;
+    transition: all 0.15s;
+  }
+  .btn-edit:hover {
+    background: var(--accent);
+    color: white;
+  }
+
   /* ─── COMMENT INPUT ─── */
   .comment-input-area {
     display: flex;
@@ -880,7 +897,8 @@
   .card-photo {
     width: 100%;
     height: 180px;
-    object-fit: cover;
+    object-fit: contain;
+    background: var(--tag-bg);
     display: block;
   }
 
@@ -896,7 +914,8 @@
   .modal-photo-slide {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
+    background: var(--tag-bg);
     display: none;
   }
   .modal-photo-slide.active { display: block; }
@@ -1005,6 +1024,7 @@
           <div class="modal-title" id="modalTitle"></div>
         </div>
         <div class="modal-top-actions">
+          <button class="btn-edit" id="modalEditBtn" onclick="openEditModal()" style="display:none">수정</button>
           <button class="btn-delete" id="modalDeleteBtn" onclick="deleteItem()" style="display:none">삭제</button>
           <button class="modal-close" onclick="closeModal()">✕</button>
         </div>
@@ -1034,11 +1054,11 @@
 <!-- POST MODAL -->
 <div class="modal-overlay" id="postModal">
   <div class="post-modal">
-    <div class="post-modal-title">
+    <div class="post-modal-title" id="postModalTitle">
       물건 등록하기
       <button class="modal-close" onclick="closePostModal()">✕</button>
     </div>
-    <div class="form-group">
+    <div class="form-group" id="posterNameGroup">
       <label class="form-label" for="newPosterName">등록자 이름</label>
       <input type="text" class="form-input" id="newPosterName" placeholder="이름을 입력하세요">
     </div>
@@ -1066,7 +1086,7 @@
       <label class="form-label">사진 없을 경우 이모지 선택</label>
       <div class="emoji-grid" id="emojiGrid"></div>
     </div>
-    <button class="btn-submit" onclick="submitPost()">등록하기</button>
+    <button class="btn-submit" id="submitPostBtn" onclick="submitPost()">등록하기</button>
   </div>
 </div>
 
@@ -1105,6 +1125,7 @@
   let uploadedPhotos = [];
   let currentSlideIndex = 0;
   let currentItemId = null;
+  let editItemId = null;
   let selectedEmoji = '📦';
 
   const DEFAULT_ITEMS = [
@@ -1295,6 +1316,7 @@
     const amIPoster = myPosts.includes(item.id);
     const isAdminLoggedIn = sessionStorage.getItem(ADMIN_SESSION_KEY) === 'true';
     const canDelete = amIPoster || isAdminLoggedIn;
+    document.getElementById('modalEditBtn').style.display = canDelete ? 'block' : 'none';
     document.getElementById('modalDeleteBtn').style.display = canDelete ? 'block' : 'none';
 
     renderComments(item);
@@ -1484,6 +1506,7 @@
         const myPosts = JSON.parse(localStorage.getItem(MY_POSTS_KEY) || '[]');
         const amIPoster = myPosts.includes(item.id);
         const canDelete = amIPoster || isAdminLoggedIn();
+        document.getElementById('modalEditBtn').style.display = canDelete ? 'block' : 'none';
         document.getElementById('modalDeleteBtn').style.display = canDelete ? 'block' : 'none';
         renderComments(item);
       }
@@ -1563,9 +1586,17 @@
     if (addMore) addMore.addEventListener('click', (e) => { e.stopPropagation(); document.getElementById('photoFileInput').click(); });
   }
 
-  function openPostModal() {
-    uploadedPhotos = [];
-    selectedEmoji = '📦';
+  function openEditModal() {
+    const item = items.find(i => i.id === currentItemId);
+    if (!item) return;
+    editItemId = item.id;
+    document.getElementById('postModalTitle').innerHTML = '물건 수정하기<button class="modal-close" onclick="closePostModal()">✕</button>';
+    document.getElementById('posterNameGroup').style.display = 'none';
+    document.getElementById('newPosterName').value = item.poster;
+    document.getElementById('newTitle').value = item.title;
+    document.getElementById('newDesc').value = item.desc;
+    uploadedPhotos = item.photos ? [...item.photos] : [];
+    selectedEmoji = item.emoji || '📦';
     renderPhotoPreview();
     const grid = document.getElementById('emojiGrid');
     grid.innerHTML = EMOJIS.map(e => `
@@ -1574,6 +1605,29 @@
     grid.querySelectorAll('.emoji-btn').forEach(btn => {
       btn.addEventListener('click', () => { selectEmoji(btn, btn.dataset.emoji); });
     });
+    document.getElementById('submitPostBtn').textContent = '수정하기';
+    document.getElementById('postModal').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function openPostModal() {
+    editItemId = null;
+    uploadedPhotos = [];
+    selectedEmoji = '📦';
+    document.getElementById('postModalTitle').innerHTML = '물건 등록하기<button class="modal-close" onclick="closePostModal()">✕</button>';
+    document.getElementById('posterNameGroup').style.display = 'block';
+    document.getElementById('newPosterName').value = '';
+    document.getElementById('newTitle').value = '';
+    document.getElementById('newDesc').value = '';
+    renderPhotoPreview();
+    const grid = document.getElementById('emojiGrid');
+    grid.innerHTML = EMOJIS.map(e => `
+      <button class="emoji-btn ${e === selectedEmoji ? 'selected' : ''}" type="button" data-emoji="${escapeHtml(e)}">${e}</button>
+    `).join('');
+    grid.querySelectorAll('.emoji-btn').forEach(btn => {
+      btn.addEventListener('click', () => { selectEmoji(btn, btn.dataset.emoji); });
+    });
+    document.getElementById('submitPostBtn').textContent = '등록하기';
     document.getElementById('postModal').classList.add('open');
     document.body.style.overflow = 'hidden';
   }
@@ -1585,6 +1639,7 @@
   }
 
   function closePostModal() {
+    editItemId = null;
     document.getElementById('postModal').classList.remove('open');
     document.body.style.overflow = '';
   }
@@ -1594,8 +1649,31 @@
     const title = document.getElementById('newTitle').value.trim();
     const desc = document.getElementById('newDesc').value.trim();
 
-    if (!posterName) { showToast('⚠️ 등록자 이름을 입력해주세요.'); return; }
+    if (!editItemId && !posterName) { showToast('⚠️ 등록자 이름을 입력해주세요.'); return; }
     if (!title || !desc) { showToast('⚠️ 물건 이름과 설명을 입력해주세요.'); return; }
+
+    if (editItemId) {
+      const item = items.find(i => i.id === editItemId);
+      if (!item) return;
+      item.emoji = selectedEmoji;
+      item.photos = uploadedPhotos.length > 0 ? [...uploadedPhotos] : null;
+      item.title = title;
+      item.desc = desc;
+      saveItems();
+      document.getElementById('newPosterName').value = '';
+      document.getElementById('newTitle').value = '';
+      document.getElementById('newDesc').value = '';
+      uploadedPhotos = [];
+      closePostModal();
+      document.getElementById('submitPostBtn').textContent = '등록하기';
+      if (currentItemId === editItemId) {
+        document.getElementById('modalTitle').textContent = item.title;
+        document.getElementById('modalDesc').textContent = item.desc;
+      }
+      renderGrid();
+      showToast('물건이 수정되었습니다.');
+      return;
+    }
 
     const now = new Date();
     const date = `${now.getFullYear()}.${String(now.getMonth() + 1).padStart(2, '0')}.${String(now.getDate()).padStart(2, '0')}`;
