@@ -1179,18 +1179,20 @@
   }
 
   function loadItems() {
+    // 항상 로컬 캐시를 먼저 로드해서 "다시 열면 사라짐"을 방지
+    loadLocalItems();
     if (!initFirebase()) {
-      loadLocalItems();
       if (!isLocalHost()) showToast('⚠️ Firebase 연결 실패: 현재 기기 로컬 저장 모드로 동작합니다.');
       renderGrid();
       return items;
     }
-    items = [];
     db.collection(FIRESTORE_COLLECTION).orderBy('createdAt', 'desc').onSnapshot(snapshot => {
       items = snapshot.docs.map(doc => {
         const d = doc.data();
         return { id: doc.id, ...d, comments: d.comments || [] };
       });
+      // 클라우드 스냅샷을 로컬 캐시에 미러링
+      saveLocalItems();
       renderGrid();
       if (currentItemId) {
         const item = items.find(i => String(i.id) === String(currentItemId));
@@ -1214,10 +1216,8 @@
   }
 
   async function saveItems() {
-    if (!useFirebase) {
-      saveLocalItems();
-      return;
-    }
+    // 단일 규칙: 어떤 모드든 로컬 캐시는 항상 저장
+    saveLocalItems();
   }
 
   async function uploadPhotosToStorage(itemId, photosToUpload) {
@@ -1457,6 +1457,7 @@
     } else {
       saveItems();
     }
+    saveItems();
     renderComments(item);
     document.getElementById('commentInputArea').style.display = 'none';
     document.getElementById('modalStatus').textContent = '확정완료';
@@ -1498,6 +1499,7 @@
     } else {
       saveItems();
     }
+    saveItems();
     input.value = '';
     renderComments(item);
     renderGrid();
@@ -1581,6 +1583,9 @@
 
     if (useFirebase) {
       await db.collection(FIRESTORE_COLLECTION).doc(String(currentItemId)).delete();
+      const idx = items.findIndex(i => String(i.id) === String(currentItemId));
+      if (idx !== -1) items.splice(idx, 1);
+      saveItems();
     } else {
       const idx = items.findIndex(i => String(i.id) === String(currentItemId));
       if (idx !== -1) items.splice(idx, 1);
@@ -1743,6 +1748,8 @@
 
       if (useFirebase) {
         await db.collection(FIRESTORE_COLLECTION).doc(String(editItemId)).update(updateData);
+        Object.assign(item, updateData);
+        saveItems();
       } else {
         Object.assign(item, updateData);
         saveItems();
@@ -1801,6 +1808,7 @@
           comments: []
         };
         items.unshift(newItem);
+      saveItems();
         renderGrid();
         const myPosts = JSON.parse(localStorage.getItem(MY_POSTS_KEY) || '[]');
         myPosts.unshift(newId);
