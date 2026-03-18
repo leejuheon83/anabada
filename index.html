@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>나눔마켓 — 우리 회사 물건 나눔</title>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&family=Pretendard:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
   @font-face {
@@ -1113,6 +1116,15 @@
 <div class="toast" id="toast"></div>
 
 <script>
+  const FIREBASE_CONFIG = {
+    apiKey: 'YOUR_API_KEY',
+    authDomain: 'YOUR_PROJECT.firebaseapp.com',
+    projectId: 'YOUR_PROJECT_ID',
+    storageBucket: 'YOUR_PROJECT.appspot.com',
+    messagingSenderId: 'YOUR_SENDER_ID',
+    appId: 'YOUR_APP_ID'
+  };
+
   const STORAGE_KEY = 'nanum-market-items';
   const MY_POSTS_KEY = 'nanum-market-my-posts';
   const ADMIN_SESSION_KEY = 'nanum-market-admin';
@@ -1121,42 +1133,91 @@
   const EMOJIS = ['💻','🖥️','⌨️','🖱️','📱','🎧','📷','🔌','💡','🪑','🗄️','📦','✏️','📋','🗂️','🔧','📚','🖨️','🎒','☕','🧊','🪴'];
   const MAX_PHOTOS = 5;
   const DESC_PREVIEW_LEN = 60;
+  const FIRESTORE_COLLECTION = 'items';
+  const STORAGE_BUCKET_PATH = 'item-photos';
 
   let uploadedPhotos = [];
   let currentSlideIndex = 0;
   let currentItemId = null;
   let editItemId = null;
   let selectedEmoji = '📦';
+  let db = null;
+  let storage = null;
+  let useFirebase = false;
 
-  const DEFAULT_ITEMS = [];
-
-  let items = loadItems();
+  let items = [];
   let currentFilter = 'all';
 
-  function loadItems() {
+  function initFirebase() {
+    if (useFirebase) return true;
+    if (!FIREBASE_CONFIG.apiKey || FIREBASE_CONFIG.apiKey === 'YOUR_API_KEY') return false;
     try {
-      const RESET_VERSION = '2';
-      if (localStorage.getItem('nanum_version') !== RESET_VERSION) {
-        localStorage.removeItem(STORAGE_KEY);
-        localStorage.removeItem(MY_POSTS_KEY);
-        localStorage.setItem('nanum_version', RESET_VERSION);
-      }
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return JSON.parse(JSON.stringify(DEFAULT_ITEMS));
-      return JSON.parse(raw);
+      if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+      db = firebase.firestore();
+      storage = firebase.storage();
+      useFirebase = true;
+      return true;
     } catch (e) {
-      console.warn('localStorage load failed:', e);
-      return JSON.parse(JSON.stringify(DEFAULT_ITEMS));
+      console.warn('Firebase init failed:', e);
+      return false;
     }
   }
 
-  function saveItems() {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-    } catch (e) {
-      console.warn('localStorage save failed:', e);
-      showToast('⚠️ 저장 공간이 부족할 수 있어요. 사진을 줄여보세요.');
+  function loadItems() {
+    if (!initFirebase()) {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      items = raw ? JSON.parse(raw) : [];
+      return items;
     }
+    items = [];
+    db.collection(FIRESTORE_COLLECTION).orderBy('createdAt', 'desc').onSnapshot(snapshot => {
+      items = snapshot.docs.map(doc => {
+        const d = doc.data();
+        return { id: doc.id, ...d, comments: d.comments || [] };
+      });
+      renderGrid();
+      if (currentItemId) {
+        const item = items.find(i => String(i.id) === String(currentItemId));
+        if (item) renderComments(item);
+      }
+    }, err => {
+      console.warn('Firestore error:', err);
+      showToast('⚠️ 데이터를 불러오는 중 오류가 발생했습니다.');
+    });
+    return items;
+  }
+
+  async function saveItems() {
+    if (!useFirebase) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+      } catch (e) {
+        showToast('⚠️ 저장 공간이 부족할 수 있어요.');
+      }
+      return;
+    }
+  }
+
+  async function uploadPhotosToStorage(itemId, photosToUpload) {
+    const base64List = (photosToUpload || uploadedPhotos).filter(p => typeof p === 'string' && p.startsWith('data:'));
+    if (!storage || base64List.length === 0) return null;
+    const urls = [];
+    for (let i = 0; i < base64List.length; i++) {
+      const ref = storage.ref().child(`${STORAGE_BUCKET_PATH}/${itemId}/${Date.now()}_${i}.jpg`);
+      const blob = await (await fetch(base64List[i])).blob();
+      await ref.put(blob);
+      urls.push(await ref.getDownloadURL());
+    }
+    return urls;
+  }
+
+  function toFirestoreItem(item) {
+    const { id, ...data } = item;
+    return {
+      ...data,
+      comments: data.comments || [],
+      photos: data.photos || null
+    };
   }
 
   function getStatusLabel(status) {
@@ -1235,7 +1296,7 @@
   }
 
   function openDetail(id) {
-    const item = items.find(i => i.id === id);
+    const item = items.find(i => String(i.id) === String(id));
     if (!item) return;
     currentItemId = id;
     currentSlideIndex = 0;
@@ -1293,7 +1354,7 @@
   }
 
   function goSlide(idx) {
-    const item = items.find(i => i.id === currentItemId);
+    const item = items.find(i => String(i.id) === String(currentItemId));
     if (!item || !item.photos) return;
     const len = item.photos.length;
     currentSlideIndex = ((idx % len) + len) % len;
@@ -1356,8 +1417,8 @@
     return colors[Math.abs(hash) % colors.length];
   }
 
-  function confirmComment(itemId, commentId) {
-    const item = items.find(i => i.id === itemId);
+  async function confirmComment(itemId, commentId) {
+    const item = items.find(i => String(i.id) === String(itemId));
     if (!item) return;
 
     item.comments.forEach(c => { c.confirmed = false; });
@@ -1367,7 +1428,14 @@
       item.status = 'confirmed';
     }
 
-    saveItems();
+    if (useFirebase) {
+      await db.collection(FIRESTORE_COLLECTION).doc(String(itemId)).update({
+        comments: item.comments,
+        status: 'confirmed'
+      });
+    } else {
+      saveItems();
+    }
     renderComments(item);
     document.getElementById('commentInputArea').style.display = 'none';
     document.getElementById('modalStatus').textContent = '확정완료';
@@ -1375,7 +1443,7 @@
     showToast(`🎉 ${comment.author}님이 수령자로 확정되었습니다!`);
   }
 
-  function submitComment() {
+  async function submitComment() {
     const input = document.getElementById('commentInput');
     const nameInput = document.getElementById('commentAuthorName');
     const text = input.value.trim();
@@ -1383,7 +1451,7 @@
     if (!text) { showToast('⚠️ 댓글 내용을 입력해주세요.'); return; }
     if (!author) { showToast('⚠️ 이름을 입력해주세요.'); return; }
 
-    const item = items.find(i => i.id === currentItemId);
+    const item = items.find(i => String(i.id) === String(currentItemId));
     if (!item) return;
 
     const now = new Date();
@@ -1401,7 +1469,14 @@
 
     if (item.status === 'available') item.status = 'pending';
 
-    saveItems();
+    if (useFirebase) {
+      await db.collection(FIRESTORE_COLLECTION).doc(String(currentItemId)).update({
+        comments: item.comments,
+        status: item.status
+      });
+    } else {
+      saveItems();
+    }
     input.value = '';
     renderComments(item);
     renderGrid();
@@ -1466,7 +1541,7 @@
 
   function refreshModalIfOpen() {
     if (currentItemId) {
-      const item = items.find(i => i.id === currentItemId);
+      const item = items.find(i => String(i.id) === String(currentItemId));
       if (item) {
         const myPosts = JSON.parse(localStorage.getItem(MY_POSTS_KEY) || '[]');
         const amIPoster = myPosts.includes(item.id);
@@ -1478,21 +1553,23 @@
     }
   }
 
-  function deleteItem() {
+  async function deleteItem() {
     if (!isAdminLoggedIn()) { showToast('⚠️ 관리자만 삭제할 수 있습니다.'); return; }
     if (!currentItemId) return;
     if (!confirm('이 물건을 삭제하시겠습니까?')) return;
 
-    const idx = items.findIndex(i => i.id === currentItemId);
-    if (idx === -1) return;
-
-    items.splice(idx, 1);
+    if (useFirebase) {
+      await db.collection(FIRESTORE_COLLECTION).doc(String(currentItemId)).delete();
+    } else {
+      const idx = items.findIndex(i => String(i.id) === String(currentItemId));
+      if (idx !== -1) items.splice(idx, 1);
+      saveItems();
+    }
 
     const myPosts = JSON.parse(localStorage.getItem(MY_POSTS_KEY) || '[]');
-    const newMyPosts = myPosts.filter(id => id !== currentItemId);
+    const newMyPosts = myPosts.filter(id => String(id) !== String(currentItemId));
     localStorage.setItem(MY_POSTS_KEY, JSON.stringify(newMyPosts));
 
-    saveItems();
     closeModal();
     currentItemId = null;
     renderGrid();
@@ -1554,7 +1631,7 @@
 
   function openEditModal() {
     if (!isAdminLoggedIn()) { showToast('⚠️ 관리자만 수정할 수 있습니다.'); return; }
-    const item = items.find(i => i.id === currentItemId);
+    const item = items.find(i => String(i.id) === String(currentItemId));
     if (!item) return;
     editItemId = item.id;
     document.getElementById('postModalTitle').innerHTML = '물건 수정하기<button class="modal-close" onclick="closePostModal()">✕</button>';
@@ -1612,7 +1689,7 @@
     document.body.style.overflow = '';
   }
 
-  function submitPost() {
+  async function submitPost() {
     const posterName = document.getElementById('newPosterName').value.trim();
     const title = document.getElementById('newTitle').value.trim();
     const desc = document.getElementById('newDesc').value.trim();
@@ -1620,14 +1697,36 @@
     if (!editItemId && !posterName) { showToast('⚠️ 등록자 이름을 입력해주세요.'); return; }
     if (!title || !desc) { showToast('⚠️ 물건 이름과 설명을 입력해주세요.'); return; }
 
+    const now = new Date();
+    const date = `${now.getFullYear()}.${String(now.getMonth() + 1).padStart(2, '0')}.${String(now.getDate()).padStart(2, '0')}`;
+
     if (editItemId) {
-      const item = items.find(i => i.id === editItemId);
+      const item = items.find(i => String(i.id) === String(editItemId));
       if (!item) return;
-      item.emoji = selectedEmoji;
-      item.photos = uploadedPhotos.length > 0 ? [...uploadedPhotos] : null;
-      item.title = title;
-      item.desc = desc;
-      saveItems();
+
+      let photoUrls = uploadedPhotos.filter(p => typeof p === 'string' && !p.startsWith('data:'));
+      const newBase64 = uploadedPhotos.filter(p => typeof p === 'string' && p.startsWith('data:'));
+      if (useFirebase && newBase64.length > 0) {
+        const uploaded = await uploadPhotosToStorage(editItemId, newBase64);
+        if (uploaded) photoUrls = [...photoUrls, ...uploaded];
+      } else if (!useFirebase && uploadedPhotos.length > 0) {
+        photoUrls = [...uploadedPhotos];
+      }
+
+      const updateData = {
+        emoji: selectedEmoji,
+        photos: photoUrls.length > 0 ? photoUrls : null,
+        title,
+        desc
+      };
+
+      if (useFirebase) {
+        await db.collection(FIRESTORE_COLLECTION).doc(String(editItemId)).update(updateData);
+      } else {
+        Object.assign(item, updateData);
+        saveItems();
+      }
+
       document.getElementById('newPosterName').value = '';
       document.getElementById('newTitle').value = '';
       document.getElementById('newDesc').value = '';
@@ -1635,36 +1734,54 @@
       closePostModal();
       document.getElementById('submitPostBtn').textContent = '등록하기';
       if (currentItemId === editItemId) {
-        document.getElementById('modalTitle').textContent = item.title;
-        document.getElementById('modalDesc').textContent = item.desc;
+        document.getElementById('modalTitle').textContent = title;
+        document.getElementById('modalDesc').textContent = desc;
       }
       renderGrid();
       showToast('물건이 수정되었습니다.');
       return;
     }
 
-    const now = new Date();
-    const date = `${now.getFullYear()}.${String(now.getMonth() + 1).padStart(2, '0')}.${String(now.getDate()).padStart(2, '0')}`;
-
-    const newItem = {
-      id: Date.now(),
-      emoji: selectedEmoji,
-      photos: uploadedPhotos.length > 0 ? [...uploadedPhotos] : null,
-      title,
-      desc,
-      poster: posterName,
-      dept: '',
-      date,
-      status: 'available',
-      comments: [],
-    };
-
-    items.unshift(newItem);
-    saveItems();
-
-    const myPosts = JSON.parse(localStorage.getItem(MY_POSTS_KEY) || '[]');
-    myPosts.unshift(newItem.id);
-    localStorage.setItem(MY_POSTS_KEY, JSON.stringify(myPosts));
+    if (useFirebase) {
+      const docRef = await db.collection(FIRESTORE_COLLECTION).add({
+        emoji: selectedEmoji,
+        photos: null,
+        title,
+        desc,
+        poster: posterName,
+        dept: '',
+        date,
+        status: 'available',
+        comments: [],
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      const newId = docRef.id;
+      if (uploadedPhotos.length > 0) {
+        const photoUrls = await uploadPhotosToStorage(newId);
+        if (photoUrls) await docRef.update({ photos: photoUrls });
+      }
+      const myPosts = JSON.parse(localStorage.getItem(MY_POSTS_KEY) || '[]');
+      myPosts.unshift(newId);
+      localStorage.setItem(MY_POSTS_KEY, JSON.stringify(myPosts));
+    } else {
+      const newItem = {
+        id: Date.now(),
+        emoji: selectedEmoji,
+        photos: uploadedPhotos.length > 0 ? [...uploadedPhotos] : null,
+        title,
+        desc,
+        poster: posterName,
+        dept: '',
+        date,
+        status: 'available',
+        comments: [],
+      };
+      items.unshift(newItem);
+      saveItems();
+      const myPosts = JSON.parse(localStorage.getItem(MY_POSTS_KEY) || '[]');
+      myPosts.unshift(newItem.id);
+      localStorage.setItem(MY_POSTS_KEY, JSON.stringify(myPosts));
+    }
 
     document.getElementById('newPosterName').value = '';
     document.getElementById('newTitle').value = '';
@@ -1672,7 +1789,7 @@
     uploadedPhotos = [];
     closePostModal();
     currentFilter = 'all';
-    document.querySelectorAll('.filter-btn').forEach((b, i) => b.classList.toggle('active', (b.dataset.filter || '') === 'all'));
+    document.querySelectorAll('.filter-btn').forEach((b) => b.classList.toggle('active', (b.dataset.filter || '') === 'all'));
     renderGrid();
     showToast('🎊 물건이 등록되었습니다!');
   }
@@ -1702,7 +1819,7 @@
 
   document.getElementById('itemGrid').addEventListener('click', (e) => {
     const card = e.target.closest('.card[data-id]');
-    if (card) openDetail(parseInt(card.dataset.id, 10));
+    if (card) openDetail(card.dataset.id);
   });
 
   document.addEventListener('DOMContentLoaded', () => {
@@ -1746,6 +1863,7 @@
     }
   });
 
+  loadItems();
   renderGrid();
   updateAdminButton();
 
