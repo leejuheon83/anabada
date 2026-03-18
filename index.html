@@ -1147,6 +1147,7 @@
 
   let items = [];
   let currentFilter = 'all';
+  const isLocalHost = () => location.hostname === 'localhost' || location.hostname === '127.0.0.1';
 
   function initFirebase() {
     if (useFirebase) return true;
@@ -1165,8 +1166,11 @@
 
   function loadItems() {
     if (!initFirebase()) {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      items = raw ? JSON.parse(raw) : [];
+      items = [];
+      if (!isLocalHost()) {
+        showToast('⚠️ Firebase 연결 실패: 다른 기기와 동기화되지 않습니다. 설정을 확인해주세요.');
+      }
+      renderGrid();
       return items;
     }
     items = [];
@@ -1191,14 +1195,7 @@
   }
 
   async function saveItems() {
-    if (!useFirebase) {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-      } catch (e) {
-        showToast('⚠️ 저장 공간이 부족할 수 있어요.');
-      }
-      return;
-    }
+    if (!useFirebase) return;
   }
 
   async function uploadPhotosToStorage(itemId, photosToUpload) {
@@ -1430,14 +1427,14 @@
       item.status = 'confirmed';
     }
 
-    if (useFirebase) {
-      await db.collection(FIRESTORE_COLLECTION).doc(String(itemId)).update({
-        comments: item.comments,
-        status: 'confirmed'
-      });
-    } else {
-      saveItems();
+    if (!useFirebase) {
+      showToast('⚠️ Firebase 미연결 상태입니다. 새로고침 후 다시 시도해주세요.');
+      return;
     }
+    await db.collection(FIRESTORE_COLLECTION).doc(String(itemId)).update({
+      comments: item.comments,
+      status: 'confirmed'
+    });
     renderComments(item);
     document.getElementById('commentInputArea').style.display = 'none';
     document.getElementById('modalStatus').textContent = '확정완료';
@@ -1471,14 +1468,14 @@
 
     if (item.status === 'available') item.status = 'pending';
 
-    if (useFirebase) {
-      await db.collection(FIRESTORE_COLLECTION).doc(String(currentItemId)).update({
-        comments: item.comments,
-        status: item.status
-      });
-    } else {
-      saveItems();
+    if (!useFirebase) {
+      showToast('⚠️ Firebase 미연결 상태입니다. 새로고침 후 다시 시도해주세요.');
+      return;
     }
+    await db.collection(FIRESTORE_COLLECTION).doc(String(currentItemId)).update({
+      comments: item.comments,
+      status: item.status
+    });
     input.value = '';
     renderComments(item);
     renderGrid();
@@ -1560,13 +1557,11 @@
     if (!currentItemId) return;
     if (!confirm('이 물건을 삭제하시겠습니까?')) return;
 
-    if (useFirebase) {
-      await db.collection(FIRESTORE_COLLECTION).doc(String(currentItemId)).delete();
-    } else {
-      const idx = items.findIndex(i => String(i.id) === String(currentItemId));
-      if (idx !== -1) items.splice(idx, 1);
-      saveItems();
+    if (!useFirebase) {
+      showToast('⚠️ Firebase 미연결 상태입니다. 새로고침 후 다시 시도해주세요.');
+      return;
     }
+    await db.collection(FIRESTORE_COLLECTION).doc(String(currentItemId)).delete();
 
     const myPosts = JSON.parse(localStorage.getItem(MY_POSTS_KEY) || '[]');
     const newMyPosts = myPosts.filter(id => String(id) !== String(currentItemId));
@@ -1691,6 +1686,10 @@
   }
 
   async function submitPost() {
+    if (!initFirebase()) {
+      showToast('⚠️ Firebase 연결 실패: 저장할 수 없습니다. 설정을 확인해주세요.');
+      return;
+    }
     const posterName = document.getElementById('newPosterName').value.trim();
     const title = document.getElementById('newTitle').value.trim();
     const desc = document.getElementById('newDesc').value.trim();
@@ -1721,12 +1720,11 @@
         desc
       };
 
-      if (useFirebase) {
-        await db.collection(FIRESTORE_COLLECTION).doc(String(editItemId)).update(updateData);
-      } else {
-        Object.assign(item, updateData);
-        saveItems();
+      if (!useFirebase) {
+        showToast('⚠️ Firebase 미연결 상태입니다. 새로고침 후 다시 시도해주세요.');
+        return;
       }
+      await db.collection(FIRESTORE_COLLECTION).doc(String(editItemId)).update(updateData);
 
       document.getElementById('newPosterName').value = '';
       document.getElementById('newTitle').value = '';
@@ -1743,62 +1741,10 @@
       return;
     }
 
-    if (useFirebase) {
-      try {
-        const docRef = await db.collection(FIRESTORE_COLLECTION).add({
-          emoji: selectedEmoji,
-          photos: null,
-          title,
-          desc,
-          poster: posterName,
-          dept: '',
-          date,
-          status: 'available',
-          comments: [],
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        const newId = docRef.id;
-        let photoUrls = null;
-        if (uploadedPhotos.length > 0) {
-          try {
-            photoUrls = await uploadPhotosToStorage(newId);
-            if (photoUrls) await docRef.update({ photos: photoUrls });
-          } catch (e) {
-            console.warn('Storage upload failed:', e);
-            showToast('⚠️ 사진 업로드 실패. Storage 규칙을 확인해주세요.');
-          }
-        }
-        const newItem = {
-          id: newId,
-          emoji: selectedEmoji,
-          photos: photoUrls || null,
-          title,
-          desc,
-          poster: posterName,
-          dept: '',
-          date,
-          status: 'available',
-          comments: []
-        };
-        items.unshift(newItem);
-        renderGrid();
-        const myPosts = JSON.parse(localStorage.getItem(MY_POSTS_KEY) || '[]');
-        myPosts.unshift(newId);
-        localStorage.setItem(MY_POSTS_KEY, JSON.stringify(myPosts));
-      } catch (e) {
-        console.error('Firestore add failed:', e);
-        if (e.code === 'permission-denied') {
-          showToast('⚠️ Firestore 쓰기 권한이 없습니다. Firebase 콘솔 → Firestore → 규칙에서 allow read, write: if true 설정해주세요.');
-        } else {
-          showToast('⚠️ 저장 실패: ' + (e.message || '알 수 없는 오류'));
-        }
-        return;
-      }
-    } else {
-      const newItem = {
-        id: Date.now(),
+    try {
+      const docRef = await db.collection(FIRESTORE_COLLECTION).add({
         emoji: selectedEmoji,
-        photos: uploadedPhotos.length > 0 ? [...uploadedPhotos] : null,
+        photos: null,
         title,
         desc,
         poster: posterName,
@@ -1806,12 +1752,44 @@
         date,
         status: 'available',
         comments: [],
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      const newId = docRef.id;
+      let photoUrls = null;
+      if (uploadedPhotos.length > 0) {
+        try {
+          photoUrls = await uploadPhotosToStorage(newId);
+          if (photoUrls) await docRef.update({ photos: photoUrls });
+        } catch (e) {
+          console.warn('Storage upload failed:', e);
+          showToast('⚠️ 사진 업로드 실패. Storage 규칙을 확인해주세요.');
+        }
+      }
+      const newItem = {
+        id: newId,
+        emoji: selectedEmoji,
+        photos: photoUrls || null,
+        title,
+        desc,
+        poster: posterName,
+        dept: '',
+        date,
+        status: 'available',
+        comments: []
       };
       items.unshift(newItem);
-      saveItems();
+      renderGrid();
       const myPosts = JSON.parse(localStorage.getItem(MY_POSTS_KEY) || '[]');
-      myPosts.unshift(newItem.id);
+      myPosts.unshift(newId);
       localStorage.setItem(MY_POSTS_KEY, JSON.stringify(myPosts));
+    } catch (e) {
+      console.error('Firestore add failed:', e);
+      if (e.code === 'permission-denied') {
+        showToast('⚠️ Firestore 쓰기 권한이 없습니다. Firebase 콘솔 → Firestore → 규칙에서 allow read, write: if true 설정해주세요.');
+      } else {
+        showToast('⚠️ 저장 실패: ' + (e.message || '알 수 없는 오류'));
+      }
+      return;
     }
 
     document.getElementById('newPosterName').value = '';
