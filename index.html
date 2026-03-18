@@ -1264,7 +1264,7 @@
         ? `<img class="card-photo" src="${item.photos[0]}" alt="${escapeHtml(item.title)}">`
         : `<div class="card-img-placeholder">${escapeHtml(item.emoji)}</div>`;
       return `
-      <div class="card" data-id="${item.id}" style="animation-delay:${i * 0.05}s">
+      <div class="card" data-id="${item.id}" style="animation-delay:${i * 0.05}s" role="button" tabindex="0">
         <div class="card-img-wrap">
           ${imgHtml}
           <div class="card-status">
@@ -1848,10 +1848,30 @@
     if (btn) filterItems(btn.dataset.filter, btn);
   });
 
-  document.getElementById('itemGrid').addEventListener('click', (e) => {
-    const card = e.target.closest('.card[data-id]');
-    if (card) openDetail(card.dataset.id);
-  });
+  const itemGrid = document.getElementById('itemGrid');
+  if (itemGrid) {
+    itemGrid.addEventListener('click', (e) => {
+      const card = e.target.closest('.card[data-id]');
+      if (card) {
+        e.preventDefault();
+        try {
+          openDetail(card.dataset.id);
+        } catch (err) {
+          console.error('openDetail error:', err);
+          showToast('세부보기 열기 실패');
+        }
+      }
+    });
+    itemGrid.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        const card = e.target.closest('.card[data-id]');
+        if (card) {
+          e.preventDefault();
+          openDetail(card.dataset.id);
+        }
+      }
+    });
+  }
 
   document.addEventListener('DOMContentLoaded', () => {
     const area = document.getElementById('photoUploadArea');
