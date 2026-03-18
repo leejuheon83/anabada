@@ -1,12 +1,16 @@
-# Firebase 보안 규칙 설정 (저장 안 될 때)
+# Firebase 설정 가이드 (anabada-f15d5)
 
-물건 저장이 안 되거나 목록이 안 보이면 **Firestore/Storage 보안 규칙**을 확인하세요.
+다른 기기에서 물건이 보이려면 아래를 모두 완료하세요.
 
-## 1. Firestore 규칙
+## 1. Firestore 데이터베이스 생성
 
-1. https://console.firebase.google.com → **anabada-f15d5** 프로젝트
-2. **Firestore Database** → **규칙** 탭
-3. 아래 내용으로 **전체 교체** 후 **게시** 클릭
+1. https://console.firebase.google.com/project/anabada-f15d5/firestore
+2. **데이터베이스 만들기** → 위치 선택(asia-northeast3 권장) → **테스트 모드**로 시작
+
+## 2. Firestore 보안 규칙
+
+1. **Firestore Database** → **규칙** 탭
+2. 아래로 교체 후 **게시**
 
 ```
 rules_version = '2';
@@ -19,10 +23,10 @@ service cloud.firestore {
 }
 ```
 
-## 2. Storage 규칙
+## 3. Storage 활성화 및 규칙
 
-1. **Storage** → **규칙** 탭
-2. 아래 내용으로 **전체 교체** 후 **게시** 클릭
+1. **Storage** → **시작하기** → **테스트 모드**로 시작
+2. **규칙** 탭 → 아래로 교체 후 **게시**
 
 ```
 rules_version = '2';
@@ -35,7 +39,7 @@ service firebase.storage {
 }
 ```
 
-## 3. Firestore/Storage가 없다면
+## 4. 인증된 도메인 (배포 사이트용)
 
-- **Firestore**: Firestore Database → 데이터베이스 만들기 → **테스트 모드**로 시작
-- **Storage**: Storage → 시작하기 → **테스트 모드**로 시작
+1. **Authentication** → **Settings** → **Authorized domains**
+2. `sbsmcanabada.vercel.app` 추가

@@ -1196,8 +1196,14 @@
         const item = items.find(i => String(i.id) === String(currentItemId));
         if (item) renderComments(item);
       }
-    }, () => {
+    }, (err) => {
       useFirebase = false;
+      const msg = (err && err.message) ? err.message : '';
+      if (msg.includes('does not exist') || msg.includes('NOT_FOUND')) {
+        showToast('⚠️ Firestore DB가 없습니다. Firebase 콘솔에서 데이터베이스를 생성해주세요.');
+      } else if (msg.includes('permission') || msg.includes('PERMISSION_DENIED')) {
+        showToast('⚠️ Firestore 규칙을 확인해주세요. FIREBASE_RULES_SETUP.md 참고.');
+      }
     });
     return items;
   }
@@ -1413,7 +1419,7 @@
     list.querySelectorAll('.btn-confirm').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
-        confirmComment(parseInt(btn.dataset.item, 10), parseInt(btn.dataset.comment, 10));
+        confirmComment(btn.dataset.item, btn.dataset.comment);
       });
     });
   }
@@ -1430,7 +1436,7 @@
     if (!item) return;
 
     item.comments.forEach(c => { c.confirmed = false; });
-    const comment = item.comments.find(c => c.id === commentId);
+    const comment = item.comments.find(c => String(c.id) === String(commentId));
     if (comment) {
       comment.confirmed = true;
       item.status = 'confirmed';
