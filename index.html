@@ -1215,15 +1215,21 @@
 
   async function uploadPhotosToStorage(itemId, photosToUpload) {
     const base64List = (photosToUpload || uploadedPhotos).filter(p => typeof p === 'string' && p.startsWith('data:'));
-    if (!storage || base64List.length === 0) return null;
-    const urls = [];
-    for (let i = 0; i < base64List.length; i++) {
-      const ref = storage.ref().child(`${STORAGE_BUCKET_PATH}/${itemId}/${Date.now()}_${i}.jpg`);
-      const blob = await (await fetch(base64List[i])).blob();
-      await ref.put(blob);
-      urls.push(await ref.getDownloadURL());
+    if (base64List.length === 0) return null;
+    if (!storage) return base64List;
+    try {
+      const urls = [];
+      for (let i = 0; i < base64List.length; i++) {
+        const ref = storage.ref().child(`${STORAGE_BUCKET_PATH}/${itemId}/${Date.now()}_${i}.jpg`);
+        const blob = await (await fetch(base64List[i])).blob();
+        await ref.put(blob);
+        urls.push(await ref.getDownloadURL());
+      }
+      return urls;
+    } catch (e) {
+      console.warn('Storage upload failed, using base64:', e);
+      return base64List;
     }
-    return urls;
   }
 
   function toFirestoreItem(item) {
@@ -1789,17 +1795,8 @@
         const newId = docRef.id;
         let photoUrls = null;
         if (uploadedPhotos.length > 0) {
-          try {
-            photoUrls = await uploadPhotosToStorage(newId);
-            if (photoUrls && photoUrls.length > 0) {
-              await docRef.update({ photos: photoUrls });
-            } else {
-              photoUrls = uploadedPhotos;
-              await docRef.update({ photos: photoUrls });
-            }
-          } catch (e) {
-            console.warn('Storage upload failed:', e);
-            photoUrls = uploadedPhotos;
+          photoUrls = await uploadPhotosToStorage(newId);
+          if (photoUrls && photoUrls.length > 0) {
             await docRef.update({ photos: photoUrls });
           }
         }
