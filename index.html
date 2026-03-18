@@ -1179,38 +1179,25 @@
   }
 
   function loadItems() {
-    // 항상 로컬 캐시를 먼저 로드해서 "다시 열면 사라짐"을 방지
     loadLocalItems();
-    if (!initFirebase()) {
-      if (!isLocalHost()) showToast('⚠️ Firebase 연결 실패: 현재 기기 로컬 저장 모드로 동작합니다.');
-      renderGrid();
-      return items;
-    }
+    renderGrid();
+    if (!initFirebase()) return items;
     db.collection(FIRESTORE_COLLECTION).orderBy('createdAt', 'desc').onSnapshot(snapshot => {
-      items = snapshot.docs.map(doc => {
+      const docs = snapshot.docs.map(doc => {
         const d = doc.data();
         return { id: doc.id, ...d, comments: d.comments || [] };
       });
-      // 클라우드 스냅샷을 로컬 캐시에 미러링
-      saveLocalItems();
+      if (docs.length > 0) {
+        items = docs;
+        saveLocalItems();
+      }
       renderGrid();
       if (currentItemId) {
         const item = items.find(i => String(i.id) === String(currentItemId));
         if (item) renderComments(item);
       }
-    }, err => {
-      console.warn('Firestore error:', err);
-      const detail = String(err && err.message ? err.message : '');
-      const isServiceDisabled = detail.includes('firestore.googleapis.com') || detail.includes('SERVICE_DISABLED') || detail.includes('Cloud Firestore API');
-      const msg = isServiceDisabled
-        ? '⚠️ Cloud Firestore API가 비활성화되어 있습니다. Firebase 프로젝트에서 Firestore API를 활성화해주세요.'
-        : (err.code === 'permission-denied'
-          ? '⚠️ Firestore 읽기 권한이 없습니다. Firebase 콘솔에서 보안 규칙을 설정해주세요.'
-          : '⚠️ 데이터를 불러오는 중 오류가 발생했습니다.');
-      showToast(msg);
+    }, () => {
       useFirebase = false;
-      loadLocalItems();
-      renderGrid();
     });
     return items;
   }
@@ -1964,7 +1951,6 @@
   });
 
   loadItems();
-  renderGrid();
   updateAdminButton();
 
   setTimeout(() => {
