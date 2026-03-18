@@ -974,7 +974,7 @@
   <div class="logo"><img src="assets/logo.png" alt="SBS M&C 나눔마켓" class="logo-img"></div>
   <div class="header-meta">
     <button class="btn-admin" id="adminBtn" onclick="toggleAdminUI()">관리자</button>
-    <button class="btn-post" onclick="openPostModal()">+ 물건 올리기</button>
+    <button class="btn-post" id="postBtn" onclick="openPostModal()" style="display:none">+ 물건 올리기</button>
   </div>
 </header>
 
@@ -1315,9 +1315,9 @@
     const myPosts = JSON.parse(localStorage.getItem(MY_POSTS_KEY) || '[]');
     const amIPoster = myPosts.includes(item.id);
     const isAdminLoggedIn = sessionStorage.getItem(ADMIN_SESSION_KEY) === 'true';
-    const canDelete = amIPoster || isAdminLoggedIn;
-    document.getElementById('modalEditBtn').style.display = canDelete ? 'block' : 'none';
-    document.getElementById('modalDeleteBtn').style.display = canDelete ? 'block' : 'none';
+    const isAdmin = isAdminLoggedIn();
+    document.getElementById('modalEditBtn').style.display = isAdmin ? 'block' : 'none';
+    document.getElementById('modalDeleteBtn').style.display = isAdmin ? 'block' : 'none';
 
     renderComments(item);
 
@@ -1497,6 +1497,7 @@
   function updateAdminButton() {
     const btn = document.getElementById('adminBtn');
     btn.textContent = isAdminLoggedIn() ? '로그아웃' : '관리자';
+    document.getElementById('postBtn').style.display = isAdminLoggedIn() ? 'block' : 'none';
   }
 
   function refreshModalIfOpen() {
@@ -1505,15 +1506,16 @@
       if (item) {
         const myPosts = JSON.parse(localStorage.getItem(MY_POSTS_KEY) || '[]');
         const amIPoster = myPosts.includes(item.id);
-        const canDelete = amIPoster || isAdminLoggedIn();
-        document.getElementById('modalEditBtn').style.display = canDelete ? 'block' : 'none';
-        document.getElementById('modalDeleteBtn').style.display = canDelete ? 'block' : 'none';
+        const isAdmin = isAdminLoggedIn();
+        document.getElementById('modalEditBtn').style.display = isAdmin ? 'block' : 'none';
+        document.getElementById('modalDeleteBtn').style.display = isAdmin ? 'block' : 'none';
         renderComments(item);
       }
     }
   }
 
   function deleteItem() {
+    if (!isAdminLoggedIn()) { showToast('⚠️ 관리자만 삭제할 수 있습니다.'); return; }
     if (!currentItemId) return;
     if (!confirm('이 물건을 삭제하시겠습니까?')) return;
 
@@ -1587,6 +1589,7 @@
   }
 
   function openEditModal() {
+    if (!isAdminLoggedIn()) { showToast('⚠️ 관리자만 수정할 수 있습니다.'); return; }
     const item = items.find(i => i.id === currentItemId);
     if (!item) return;
     editItemId = item.id;
@@ -1611,6 +1614,7 @@
   }
 
   function openPostModal() {
+    if (!isAdminLoggedIn()) { showToast('⚠️ 관리자만 물건을 등록할 수 있습니다.'); return; }
     editItemId = null;
     uploadedPhotos = [];
     selectedEmoji = '📦';
