@@ -1213,22 +1213,44 @@
     saveLocalItems();
   }
 
+  function resizeImageForStorage(base64, maxSize) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        let w = img.width, h = img.height;
+        if (w > maxSize || h > maxSize) {
+          if (w > h) { h = (h / w) * maxSize; w = maxSize; }
+          else { w = (w / h) * maxSize; h = maxSize; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', 0.75));
+      };
+      img.onerror = () => resolve(base64);
+      img.src = base64;
+    });
+  }
+
   async function uploadPhotosToStorage(itemId, photosToUpload) {
     const base64List = (photosToUpload || uploadedPhotos).filter(p => typeof p === 'string' && p.startsWith('data:'));
     if (base64List.length === 0) return null;
-    if (!storage) return base64List;
+    const resized = await Promise.all(base64List.map(b => resizeImageForStorage(b, 800)));
+    if (!storage) return resized;
     try {
       const urls = [];
-      for (let i = 0; i < base64List.length; i++) {
+      for (let i = 0; i < resized.length; i++) {
         const ref = storage.ref().child(`${STORAGE_BUCKET_PATH}/${itemId}/${Date.now()}_${i}.jpg`);
-        const blob = await (await fetch(base64List[i])).blob();
+        const blob = await (await fetch(resized[i])).blob();
         await ref.put(blob);
         urls.push(await ref.getDownloadURL());
       }
       return urls;
     } catch (e) {
       console.warn('Storage upload failed, using base64:', e);
-      return base64List;
+      return resized;
     }
   }
 
@@ -1280,7 +1302,7 @@
       const s = getStatusLabel(item.status);
       const imgHtml = item.photos && item.photos.length > 0
         ? `<img class="card-photo" src="${item.photos[0]}" alt="${escapeHtml(item.title)}">`
-        : `<div class="card-img-placeholder">${escapeHtml(item.emoji)}</div>`;
+        : `<div class="card-img-placeholder">${escapeHtml(item.emoji || '📦')}</div>`;
       return `
       <div class="card" data-id="${item.id}" style="animation-delay:${i * 0.05}s" role="button" tabindex="0">
         <div class="card-img-wrap">
@@ -1347,7 +1369,7 @@
         a.addEventListener('click', () => goSlide(currentSlideIndex + parseInt(a.dataset.dir, 10)));
       });
     } else {
-      imageArea.innerHTML = `<div class="modal-img-placeholder" id="modalEmoji">${escapeHtml(item.emoji)}</div>`;
+      imageArea.innerHTML = `<div class="modal-img-placeholder" id="modalEmoji">${escapeHtml(item.emoji || '📦')}</div>`;
     }
 
     document.getElementById('modalTitle').textContent = item.title;
@@ -1734,20 +1756,27 @@
 
       let photoUrls = uploadedPhotos.filter(p => typeof p === 'string' && !p.startsWith('data:'));
       const newBase64 = uploadedPhotos.filter(p => typeof p === 'string' && p.startsWith('data:'));
-      if (useFirebase && newBase64.length > 0) {
-        try {
-          const uploaded = await uploadPhotosToStorage(editItemId, newBase64);
-          photoUrls = uploaded && uploaded.length > 0 ? [...photoUrls, ...uploaded] : [...photoUrls, ...newBase64];
-        } catch (e) {
-          photoUrls = [...photoUrls, ...newBase64];
+      if (newBase64.length > 0) {
+        if (useFirebase) {
+          try {
+            const uploaded = await uploadPhotosToStorage(editItemId, newBase64);
+            photoUrls = uploaded && uploaded.length > 0 ? [...photoUrls, ...uploaded] : [...photoUrls, ...(await Promise.all(newBase64.map(b => resizeImageForStorage(b, 800))))];
+          } catch (e) {
+            const resized = await Promise.all(newBase64.map(b => resizeImageForStorage(b, 800)));
+            photoUrls = [...photoUrls, ...resized];
+          }
+        } else {
+          const resized = await Promise.all(newBase64.map(b => resizeImageForStorage(b, 800)));
+          photoUrls = [...photoUrls, ...resized];
         }
       } else if (!useFirebase && uploadedPhotos.length > 0) {
         photoUrls = [...uploadedPhotos];
       }
 
+      const hasPhotos = photoUrls.length > 0;
       const updateData = {
-        emoji: selectedEmoji,
-        photos: photoUrls.length > 0 ? photoUrls : null,
+        emoji: hasPhotos ? null : selectedEmoji,
+        photos: hasPhotos ? photoUrls : null,
         title,
         desc
       };
@@ -1780,8 +1809,9 @@
 
     if (useFirebase) {
       try {
+        const hasPhotos = uploadedPhotos.length > 0;
         const docRef = await db.collection(FIRESTORE_COLLECTION).add({
-          emoji: selectedEmoji,
+          emoji: hasPhotos ? null : selectedEmoji,
           photos: null,
           title,
           desc,
@@ -1794,15 +1824,20 @@
         });
         const newId = docRef.id;
         let photoUrls = null;
-        if (uploadedPhotos.length > 0) {
-          photoUrls = await uploadPhotosToStorage(newId);
-          if (photoUrls && photoUrls.length > 0) {
-            await docRef.update({ photos: photoUrls });
+        if (hasPhotos) {
+          try {
+            photoUrls = await uploadPhotosToStorage(newId);
+            if (photoUrls && photoUrls.length > 0) {
+              await docRef.update({ photos: photoUrls, emoji: null });
+            }
+          } catch (e) {
+            console.warn('Photo save failed:', e);
+            showToast('⚠️ 사진 저장 실패. 다시 시도해주세요.');
           }
         }
         const newItem = {
           id: newId,
-          emoji: selectedEmoji,
+          emoji: hasPhotos ? null : selectedEmoji,
           photos: photoUrls || null,
           title,
           desc,
@@ -1830,10 +1865,12 @@
         } else {
           showToast('⚠️ 클라우드 저장 실패: 현재 기기 로컬 저장 모드로 전환합니다.');
         }
+        const hasPhotos = uploadedPhotos.length > 0;
+        const photosToSave = hasPhotos ? await Promise.all(uploadedPhotos.filter(p => typeof p === 'string' && p.startsWith('data:')).map(b => resizeImageForStorage(b, 800))) : null;
         const newItem = {
           id: Date.now(),
-          emoji: selectedEmoji,
-          photos: uploadedPhotos.length > 0 ? [...uploadedPhotos] : null,
+          emoji: hasPhotos ? null : selectedEmoji,
+          photos: photosToSave && photosToSave.length > 0 ? photosToSave : null,
           title,
           desc,
           poster: posterName,
@@ -1849,10 +1886,12 @@
         localStorage.setItem(MY_POSTS_KEY, JSON.stringify(myPosts));
       }
     } else {
+      const hasPhotos = uploadedPhotos.length > 0;
+      const photosToSave = hasPhotos ? await Promise.all(uploadedPhotos.filter(p => typeof p === 'string' && p.startsWith('data:')).map(b => resizeImageForStorage(b, 800))) : null;
       const newItem = {
         id: Date.now(),
-        emoji: selectedEmoji,
-        photos: uploadedPhotos.length > 0 ? [...uploadedPhotos] : null,
+        emoji: hasPhotos ? null : selectedEmoji,
+        photos: photosToSave && photosToSave.length > 0 ? photosToSave : null,
         title,
         desc,
         poster: posterName,
