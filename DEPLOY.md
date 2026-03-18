@@ -1,8 +1,11 @@
 # Firebase + GitHub + Vercel 연동 가이드
 
-## 1. Firebase 설정 (완료)
+## 1. Firebase 설정 (anabada 프로젝트)
 
-Firebase 콘솔에서 프로젝트를 생성하고 `index.html`의 `FIREBASE_CONFIG`에 설정값을 입력하세요.
+1. https://console.firebase.google.com → **anabada** 프로젝트 선택
+2. 프로젝트 설정(⚙️) → 일반 → 내 앱 → 웹앱 등록/확인
+3. `index.html`의 `FIREBASE_CONFIG`에 **apiKey, messagingSenderId, appId** 등 실제 값 입력
+   - authDomain, projectId, storageBucket는 anabada 기준으로 이미 설정됨 (다르면 수정)
 
 ---
 
@@ -62,3 +65,15 @@ Firebase 콘솔에서 프로젝트를 생성하고 `index.html`의 `FIREBASE_CON
 
 배포 후 `index.html`의 `FIREBASE_CONFIG`에 입력한 Firebase 설정이 적용됩니다.
 (프론트엔드에 노출되므로 API 키는 공개되어도 됩니다. 보안은 Firestore/Storage 규칙으로 관리됩니다.)
+
+---
+
+## 연동 체크리스트
+
+| 항목 | 상태 | 비고 |
+|------|------|------|
+| Firebase anabada | ⬜ | index.html에 apiKey, appId 등 입력 |
+| Firestore | ⬜ | 테스트 모드 또는 규칙 설정 |
+| Storage | ⬜ | item-photos 경로 규칙 |
+| GitHub | ⬜ | gh auth login 후 gh repo create |
+| Vercel | ⬜ | 대시보드에서 GitHub 저장소 연결 |

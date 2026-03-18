@@ -1,12 +1,11 @@
-# Firebase 설정 가이드
+# Firebase 설정 가이드 (anabada 프로젝트)
 
 물건 등록 데이터를 모든 사용자에게 공유하려면 Firebase를 설정해야 합니다.
 
-## 1. Firebase 프로젝트 생성
+## 1. Firebase 프로젝트 (anabada)
 
-1. https://console.firebase.google.com 접속
-2. **프로젝트 추가** 클릭
-3. 프로젝트 이름 입력 후 생성
+프로젝트 **anabada**가 이미 생성되어 있습니다.
+https://console.firebase.google.com → **anabada** 선택
 
 ## 2. Firestore 데이터베이스 활성화
 
@@ -49,17 +48,17 @@ service firebase.storage {
 
 ## 6. 웹 앱 등록 및 설정값 복사
 
-1. Firebase 콘솔 → 프로젝트 설정(⚙️) → **일반** 탭
-2. **내 앱** → 웹(</>) 아이콘 클릭
+1. Firebase 콘솔 → **anabada** 프로젝트 → 프로젝트 설정(⚙️) → **일반** 탭
+2. **내 앱** → 웹(</>) 아이콘 클릭 (없으면 앱 추가)
 3. 앱 닉네임 입력 후 등록
-4. 표시되는 설정값을 `index.html`의 `FIREBASE_CONFIG`에 입력:
+4. 표시되는 설정값을 `index.html`의 `FIREBASE_CONFIG`에 입력 (apiKey, messagingSenderId, appId 등):
 
 ```javascript
 const FIREBASE_CONFIG = {
-  apiKey: 'AIza...',
-  authDomain: 'your-project.firebaseapp.com',
-  projectId: 'your-project-id',
-  storageBucket: 'your-project.appspot.com',
+  apiKey: 'AIza...',           // Firebase에서 복사
+  authDomain: 'anabada.firebaseapp.com',  // projectId에 따라 다를 수 있음
+  projectId: 'anabada',        // Firebase에서 확인
+  storageBucket: 'anabada.appspot.com',
   messagingSenderId: '123456789',
   appId: '1:123456789:web:abc123'
 };
