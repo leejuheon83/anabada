@@ -1900,6 +1900,12 @@
   renderGrid();
   updateAdminButton();
 
+  setTimeout(() => {
+    if (!useFirebase && !location.hostname.includes('localhost') && !location.hostname.includes('127.0.0.1')) {
+      showToast('⚠️ Firebase 미연결. Firebase 콘솔 → Authentication → 인증된 도메인에 이 사이트 주소를 추가해주세요.');
+    }
+  }, 2000);
+
   document.getElementById('loginPw')?.addEventListener('keydown', function(e) {
     if (e.key === 'Enter') doLogin();
   });
