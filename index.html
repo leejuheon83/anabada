@@ -1,0 +1,1711 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>나눔마켓 — 우리 회사 물건 나눔</title>
+<link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&family=Pretendard:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  @font-face {
+    font-family: 'HakgyoansimKkwabaegi';
+    src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2402_keris@1.0/TTHakgyoansimKkwabaegiR.woff2') format('woff2');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+  }
+  :root {
+    --bg: #F0F2F8;
+    --surface: #FFFFFF;
+    --accent: #0085CD;
+    --accent2: #0096D6;
+    --dark: #FFFFFF;
+    --text-dark: #0F1A5C;
+    --mid: #3D4A6B;
+    --light: #8B9AB8;
+    --border: #D8DCE8;
+    --confirmed: #2A7A4A;
+    --tag-bg: #E8ECF5;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    font-family: 'Pretendard', sans-serif;
+    color: var(--text-dark);
+    min-height: 100vh;
+  }
+
+  /* ─── HEADER ─── */
+  header {
+    background: var(--dark);
+    padding: 0 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+  }
+  .logo-img {
+    height: 36px;
+    width: auto;
+    display: block;
+  }
+
+  .header-meta {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .user-badge {
+    font-size: 13px;
+    color: var(--light);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .user-dot {
+    width: 8px; height: 8px;
+    background: #4ade80;
+    border-radius: 50%;
+  }
+
+  .btn-post {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 9px 20px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'Pretendard', sans-serif;
+    transition: background 0.2s;
+    letter-spacing: 0.2px;
+  }
+  .btn-post:hover { background: #005192; }
+
+  .btn-admin {
+    background: none;
+    border: 1px solid var(--text-dark);
+    color: var(--text-dark);
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'Pretendard', sans-serif;
+    transition: all 0.15s;
+  }
+  .btn-admin:hover {
+    background: var(--text-dark);
+    color: white;
+  }
+
+  /* ─── HERO STRIP ─── */
+  .hero-strip {
+    background: #0085CD;
+    padding: 28px 40px;
+    display: flex;
+    align-items: flex-end;
+    gap: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-strip::before {
+    content: '';
+    position: absolute;
+    right: -20px;
+    top: -30px;
+    font-family: 'Nanum Myeongjo', serif;
+    font-size: 140px;
+    font-weight: 800;
+    color: rgba(255,255,255,0.07);
+    line-height: 1;
+    pointer-events: none;
+  }
+
+  .hero-title {
+    font-family: 'HakgyoansimKkwabaegi', 'Pretendard', sans-serif;
+    font-size: 42px;
+    font-weight: normal;
+    color: white;
+    line-height: 1.1;
+  }
+  .hero-sub {
+    font-size: 13px;
+    color: rgba(255,255,255,0.7);
+    line-height: 1.6;
+    max-width: 320px;
+  }
+
+  .hero-stats {
+    margin-left: auto;
+    display: flex;
+    gap: 32px;
+  }
+
+  .stat {
+    text-align: center;
+    color: white;
+  }
+  .stat-num {
+    font-family: 'Nanum Myeongjo', serif;
+    font-size: 28px;
+    font-weight: 700;
+    display: block;
+  }
+  .stat-label {
+    font-size: 11px;
+    color: rgba(255,255,255,0.6);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  /* ─── FILTER BAR ─── */
+  .filter-bar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 40px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    height: 48px;
+  }
+
+  .filter-btn {
+    background: none;
+    border: none;
+    padding: 6px 14px;
+    font-size: 13px;
+    font-family: 'Pretendard', sans-serif;
+    color: var(--mid);
+    cursor: pointer;
+    border-radius: 20px;
+    transition: all 0.15s;
+    font-weight: 500;
+  }
+  .filter-btn:hover { background: var(--tag-bg); color: var(--text-dark); }
+  .filter-btn.active {
+    background: var(--text-dark);
+    color: white;
+  }
+
+  /* ─── MAIN GRID ─── */
+  main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 36px 40px;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+
+  .section-title {
+    font-family: 'Nanum Myeongjo', serif;
+    font-size: 20px;
+    font-weight: 700;
+  }
+
+  .section-count {
+    font-size: 13px;
+    color: var(--light);
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 20px;
+  }
+
+  /* ─── CARD ─── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    animation: fadeUp 0.4s ease both;
+  }
+  .card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 32px rgba(15,26,92,0.12);
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .card:nth-child(2) { animation-delay: 0.05s; }
+  .card:nth-child(3) { animation-delay: 0.10s; }
+  .card:nth-child(4) { animation-delay: 0.15s; }
+  .card:nth-child(5) { animation-delay: 0.20s; }
+  .card:nth-child(6) { animation-delay: 0.25s; }
+
+  .card-img {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    display: block;
+    background: var(--tag-bg);
+    position: relative;
+  }
+
+  .card-img-placeholder {
+    width: 100%;
+    height: 180px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48px;
+    background: var(--tag-bg);
+  }
+
+  .card-status {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+  }
+
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+  }
+  .status-badge.available {
+    background: var(--text-dark);
+    color: white;
+  }
+  .status-badge.pending {
+    background: var(--accent2);
+    color: white;
+  }
+  .status-badge.confirmed {
+    background: var(--confirmed);
+    color: white;
+  }
+
+  .card-body {
+    padding: 18px 20px;
+  }
+
+  .card-category {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+  }
+
+  .card-title {
+    font-family: 'Nanum Myeongjo', serif;
+    font-size: 17px;
+    font-weight: 700;
+    line-height: 1.35;
+    margin-bottom: 8px;
+  }
+
+  .card-desc {
+    font-size: 13px;
+    color: var(--mid);
+    line-height: 1.55;
+    margin-bottom: 14px;
+  }
+
+  .card-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--light);
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+  }
+
+  .card-poster {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .avatar {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--text-dark);
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .comment-count {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  /* ─── MODAL ─── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(15,26,92,0.6);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    backdrop-filter: blur(4px);
+    animation: fadeIn 0.2s ease;
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  .modal {
+    background: var(--surface);
+    border-radius: 12px;
+    width: 100%;
+    max-width: 680px;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: slideUp 0.25s ease;
+  }
+
+  @keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to   { transform: translateY(0); opacity: 1; }
+  }
+
+  .modal-img-placeholder {
+    width: 100%;
+    height: 240px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 72px;
+    background: var(--tag-bg);
+    border-radius: 12px 12px 0 0;
+  }
+
+  .modal-content {
+    padding: 28px 32px 32px;
+  }
+
+  .modal-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .modal-category {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+  }
+
+  .modal-title {
+    font-family: 'Nanum Myeongjo', serif;
+    font-size: 26px;
+    font-weight: 800;
+    line-height: 1.2;
+  }
+
+  .modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: var(--light);
+    line-height: 1;
+    padding: 4px;
+    margin-top: -4px;
+  }
+  .modal-close:hover { color: var(--text-dark); }
+
+  .modal-top-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .modal-desc {
+    font-size: 14px;
+    color: var(--mid);
+    line-height: 1.7;
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .modal-info-row {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 24px;
+  }
+
+  .modal-info-item {
+    font-size: 12px;
+    color: var(--light);
+  }
+  .modal-info-item strong {
+    display: block;
+    font-size: 13px;
+    color: var(--text-dark);
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+
+  /* ─── COMMENTS ─── */
+  .comments-section { }
+
+  .comments-title {
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .comments-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .comment {
+    background: var(--bg);
+    border-radius: 8px;
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    position: relative;
+  }
+
+  .comment.confirmed-comment {
+    border-color: var(--confirmed);
+    background: #f0faf4;
+  }
+
+  .comment-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+
+  .comment-author {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .comment-time {
+    font-size: 11px;
+    color: var(--light);
+  }
+
+  .comment-text {
+    font-size: 13px;
+    color: var(--mid);
+    line-height: 1.55;
+  }
+
+  .confirm-badge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: var(--confirmed);
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 10px;
+    letter-spacing: 0.5px;
+  }
+
+  .btn-confirm {
+    background: none;
+    border: 1px solid var(--border);
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    cursor: pointer;
+    color: var(--mid);
+    font-family: 'Pretendard', sans-serif;
+    transition: all 0.15s;
+  }
+  .btn-confirm:hover {
+    border-color: var(--confirmed);
+    color: var(--confirmed);
+    background: #f0faf4;
+  }
+  .btn-confirm.confirmed-btn {
+    border-color: var(--confirmed);
+    background: var(--confirmed);
+    color: white;
+  }
+
+  .btn-delete {
+    background: none;
+    border: 1px solid #dc2626;
+    color: #dc2626;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'Pretendard', sans-serif;
+    transition: all 0.15s;
+  }
+  .btn-delete:hover {
+    background: #dc2626;
+    color: white;
+  }
+
+  /* ─── COMMENT INPUT ─── */
+  .comment-input-area {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+  }
+
+  .comment-input-row {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .comment-name-input {
+    width: 100%;
+    max-width: 140px;
+  }
+
+  .comment-input {
+    flex: 1;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: 'Pretendard', sans-serif;
+    background: white;
+    resize: none;
+    outline: none;
+    transition: border-color 0.15s;
+    color: var(--text-dark);
+  }
+  .comment-input:focus { border-color: var(--text-dark); }
+
+  .btn-send {
+    background: var(--text-dark);
+    color: white;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'Pretendard', sans-serif;
+    white-space: nowrap;
+    transition: background 0.15s;
+  }
+  .btn-send:hover { background: var(--accent); }
+
+  /* ─── POST MODAL ─── */
+  .post-modal {
+    background: var(--surface);
+    border-radius: 12px;
+    width: 100%;
+    max-width: 520px;
+    padding: 32px;
+    animation: slideUp 0.25s ease;
+  }
+
+  .post-modal-title {
+    font-family: 'Nanum Myeongjo', serif;
+    font-size: 22px;
+    font-weight: 800;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .form-group {
+    margin-bottom: 16px;
+  }
+
+  .form-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--mid);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 6px;
+  }
+
+  .form-input, .form-select, .form-textarea {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: 'Pretendard', sans-serif;
+    background: white;
+    color: var(--text-dark);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--text-dark); }
+
+  .form-textarea {
+    height: 90px;
+    resize: none;
+    line-height: 1.6;
+  }
+
+  .emoji-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+
+  .emoji-btn {
+    background: var(--bg);
+    border: 2px solid transparent;
+    border-radius: 8px;
+    font-size: 24px;
+    padding: 8px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s;
+  }
+  .emoji-btn:hover { border-color: var(--border); }
+  .emoji-btn.selected { border-color: var(--text-dark); background: var(--tag-bg); }
+
+  .btn-submit {
+    width: 100%;
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 13px;
+    border-radius: 6px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: 'Pretendard', sans-serif;
+    margin-top: 8px;
+    transition: background 0.15s;
+    letter-spacing: 0.3px;
+  }
+  .btn-submit:hover { background: #005192; }
+
+  /* ─── TOAST ─── */
+  .toast {
+    position: fixed;
+    bottom: 32px;
+    right: 32px;
+    background: var(--text-dark);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    z-index: 999;
+    transform: translateY(80px);
+    opacity: 0;
+    transition: all 0.3s ease;
+  }
+  .toast.show {
+    transform: translateY(0);
+    opacity: 1;
+  }
+
+  .card-img-wrap {
+    position: relative;
+  }
+
+  /* ─── PHOTO UPLOAD ─── */
+  .photo-upload-area {
+    border: 2px dashed var(--border);
+    border-radius: 8px;
+    padding: 0;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    position: relative;
+    overflow: hidden;
+    background: white;
+  }
+  .photo-upload-area:hover {
+    border-color: var(--text-dark);
+    background: var(--bg);
+  }
+  .photo-upload-area.has-image {
+    border-style: solid;
+    border-color: var(--border);
+    padding: 0;
+  }
+
+  .photo-upload-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 28px 16px;
+    pointer-events: none;
+  }
+
+  .photo-upload-icon {
+    font-size: 32px;
+    opacity: 0.5;
+  }
+
+  .photo-upload-text {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--mid);
+  }
+
+  .photo-upload-sub {
+    font-size: 11px;
+    color: var(--light);
+  }
+
+  .photo-preview-wrap {
+    position: relative;
+    display: none;
+  }
+  .photo-preview-wrap.visible { display: block; }
+
+  .photo-preview {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    display: block;
+    border-radius: 6px;
+  }
+
+  .photo-preview-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    padding: 8px;
+  }
+
+  .photo-thumb-wrap {
+    position: relative;
+    border-radius: 6px;
+    overflow: hidden;
+    aspect-ratio: 1;
+  }
+
+  .photo-thumb {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .photo-thumb-remove {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: rgba(15,26,92,0.7);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+  .photo-thumb-remove:hover { background: var(--accent); }
+
+  .photo-add-more {
+    aspect-ratio: 1;
+    border: 2px dashed var(--border);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    cursor: pointer;
+    color: var(--light);
+    transition: all 0.15s;
+  }
+  .photo-add-more:hover { border-color: var(--text-dark); color: var(--text-dark); }
+
+  .card-photo {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    display: block;
+  }
+
+  .modal-photo-slider {
+    width: 100%;
+    height: 260px;
+    position: relative;
+    overflow: hidden;
+    border-radius: 12px 12px 0 0;
+    background: var(--tag-bg);
+  }
+
+  .modal-photo-slide {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: none;
+  }
+  .modal-photo-slide.active { display: block; }
+
+  .photo-nav {
+    position: absolute;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 6px;
+  }
+
+  .photo-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.5);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .photo-dot.active { background: white; }
+
+  .photo-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(15,26,92,0.45);
+    color: white;
+    border: none;
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s;
+  }
+  .photo-arrow:hover { background: rgba(15,26,92,0.8); }
+  .photo-arrow.left { left: 12px; }
+  .photo-arrow.right { right: 12px; }
+
+  .no-items {
+    grid-column: 1/-1;
+    text-align: center;
+    padding: 60px;
+    color: var(--light);
+    font-size: 14px;
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo"><img src="assets/logo.png" alt="SBS M&C 나눔마켓" class="logo-img"></div>
+  <div class="header-meta">
+    <button class="btn-admin" id="adminBtn" onclick="toggleAdminUI()">관리자</button>
+    <button class="btn-post" onclick="openPostModal()">+ 물건 올리기</button>
+  </div>
+</header>
+
+<!-- HERO -->
+<div class="hero-strip">
+  <div class="hero-title">나눔 마켓</div>
+  <div class="hero-sub">사옥 이전에 따라 물품 및 기기 등 나눔합니다.<br>댓글을 달면 관리자가 수령자를 확정합니다.</div>
+  <div class="hero-stats">
+    <div class="stat">
+      <span class="stat-num" id="totalCount">6</span>
+      <span class="stat-label">전체</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num" id="availableCount">4</span>
+      <span class="stat-label">나눔중</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num" id="confirmedCount">2</span>
+      <span class="stat-label">확정</span>
+    </div>
+  </div>
+</div>
+
+<!-- FILTER -->
+<div class="filter-bar" id="filterBar">
+  <button class="filter-btn active" data-filter="all">전체</button>
+  <button class="filter-btn" data-filter="available">나눔중</button>
+  <button class="filter-btn" data-filter="confirmed">확정완료</button>
+</div>
+
+<!-- MAIN -->
+<main>
+  <div class="section-header">
+    <div class="section-title">나눔 물건</div>
+    <div class="section-count" id="gridCount">6개</div>
+  </div>
+  <div class="grid" id="itemGrid"></div>
+</main>
+
+<!-- ITEM DETAIL MODAL -->
+<div class="modal-overlay" id="detailModal">
+  <div class="modal" id="modalInner">
+    <div id="modalImageArea"><div class="modal-img-placeholder" id="modalEmoji"></div></div>
+    <div class="modal-content">
+      <div class="modal-top">
+        <div>
+          <div class="modal-title" id="modalTitle"></div>
+        </div>
+        <div class="modal-top-actions">
+          <button class="btn-delete" id="modalDeleteBtn" onclick="deleteItem()" style="display:none">삭제</button>
+          <button class="modal-close" onclick="closeModal()">✕</button>
+        </div>
+      </div>
+      <div class="modal-desc" id="modalDesc"></div>
+      <div class="modal-info-row">
+        <div class="modal-info-item"><strong id="modalPoster"></strong>등록자</div>
+        <div class="modal-info-item"><strong id="modalDate"></strong>등록일</div>
+        <div class="modal-info-item"><strong id="modalStatus"></strong>상태</div>
+      </div>
+
+      <div class="comments-section">
+        <div class="comments-title">💬 신청 댓글 <span id="commentCountLabel" style="color:var(--light);font-weight:400;"></span></div>
+        <div class="comments-list" id="commentsList"></div>
+        <div class="comment-input-area" id="commentInputArea">
+          <div class="comment-input-row">
+            <input type="text" class="form-input comment-name-input" id="commentAuthorName" placeholder="이름" maxlength="20">
+            <textarea class="comment-input" id="commentInput" rows="2" placeholder="신청 이유나 사용 계획을 적어주세요 😊"></textarea>
+          </div>
+          <button class="btn-send" onclick="submitComment()">댓글 달기</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- POST MODAL -->
+<div class="modal-overlay" id="postModal">
+  <div class="post-modal">
+    <div class="post-modal-title">
+      물건 등록하기
+      <button class="modal-close" onclick="closePostModal()">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="newPosterName">등록자 이름</label>
+      <input type="text" class="form-input" id="newPosterName" placeholder="이름을 입력하세요">
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="newTitle">물건 이름</label>
+      <input type="text" class="form-input" id="newTitle" placeholder="예: 모니터 암, 키보드, 의자 등">
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="newDesc">물건 설명</label>
+      <textarea class="form-textarea" id="newDesc" placeholder="상태, 구매시기, 사용 횟수 등을 알려주세요"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">사진 등록 <span style="color:var(--light);font-weight:400;text-transform:none;letter-spacing:0;">(최대 5장)</span></label>
+      <input type="file" id="photoFileInput" accept="image/*" multiple style="display:none">
+      <div class="photo-upload-area" id="photoUploadArea">
+        <div class="photo-upload-inner" id="photoUploadInner">
+          <div class="photo-upload-icon">📸</div>
+          <div class="photo-upload-text">클릭하여 사진 추가</div>
+          <div class="photo-upload-sub">JPG, PNG, GIF · 최대 5장</div>
+        </div>
+        <div class="photo-preview-grid" id="photoPreviewGrid" style="display:none"></div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">사진 없을 경우 이모지 선택</label>
+      <div class="emoji-grid" id="emojiGrid"></div>
+    </div>
+    <button class="btn-submit" onclick="submitPost()">등록하기</button>
+  </div>
+</div>
+
+<!-- ADMIN LOGIN MODAL -->
+<div class="modal-overlay" id="loginModal">
+  <div class="post-modal" style="max-width:360px">
+    <div class="post-modal-title">
+      관리자 로그인
+      <button class="modal-close" onclick="closeLoginModal()">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="loginId">아이디</label>
+      <input type="text" class="form-input" id="loginId" placeholder="아이디">
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="loginPw">비밀번호</label>
+      <input type="password" class="form-input" id="loginPw" placeholder="비밀번호">
+    </div>
+    <button class="btn-submit" onclick="doLogin()">로그인</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+  const STORAGE_KEY = 'nanum-market-items';
+  const MY_POSTS_KEY = 'nanum-market-my-posts';
+  const ADMIN_SESSION_KEY = 'nanum-market-admin';
+  const ADMIN_ID = 'admin';
+  const ADMIN_PW = 'admin';
+  const EMOJIS = ['💻','🖥️','⌨️','🖱️','📱','🎧','📷','🔌','💡','🪑','🗄️','📦','✏️','📋','🗂️','🔧','📚','🖨️','🎒','☕','🧊','🪴'];
+  const MAX_PHOTOS = 5;
+  const DESC_PREVIEW_LEN = 60;
+
+  let uploadedPhotos = [];
+  let currentSlideIndex = 0;
+  let currentItemId = null;
+  let selectedEmoji = '📦';
+
+  const DEFAULT_ITEMS = [
+    { id: 1, emoji: '💻', title: 'MacBook Pro 2019 (인텔)', category: '전자기기',
+      desc: '16인치 인텔 맥북 프로입니다. 배터리 교체 완료, 외관 스크래치 약간 있음. 사용감 있지만 성능 이상 없어요.',
+      poster: '이수진', dept: '경영지원팀', date: '2025.11.12', status: 'pending',
+      comments: [
+        { id: 1, author: '박민준', dept: '마케팅팀', text: '집에서 개인 공부용으로 쓰고 싶습니다! 잘 사용하겠습니다 🙏', time: '11.13 09:21', confirmed: false },
+        { id: 2, author: '최유리', dept: '디자인팀', text: '디자인 작업 보조용으로 활용하고 싶어요. 소중히 사용할게요!', time: '11.13 11:05', confirmed: false },
+        { id: 3, author: '한동훈', dept: '개발팀', text: '테스트 환경 구축용으로 필요합니다. 잘 관리하겠습니다.', time: '11.13 14:30', confirmed: false },
+      ]
+    },
+    { id: 2, emoji: '🪑', title: '허먼밀러 의자 (에어론 2세대)', category: '가구·집기',
+      desc: '에어론 2세대 C사이즈. 팔걸이 높이조절 약간 삐걱거림 외에는 정상. 허리 지지대 양호.',
+      poster: '김태호', dept: '재무팀', date: '2025.11.10', status: 'confirmed',
+      comments: [
+        { id: 1, author: '송지은', dept: '인사팀', text: '허리가 안 좋아서 정말 필요해요. 오래오래 소중히 쓸게요!', time: '11.10 16:00', confirmed: true },
+        { id: 2, author: '오재원', dept: '영업팀', text: '저도 쓰고 싶은데 혹시 안되면 다음 기회에ㅠ', time: '11.11 09:14', confirmed: false },
+      ]
+    },
+    { id: 3, emoji: '🖥️', title: '27인치 4K 모니터 (LG)', category: '전자기기',
+      desc: 'LG 27UK850 UHD 4K 모니터입니다. USB-C 지원. 사용기간 2년, 패널 상태 양호. 전원 케이블만 포함.',
+      poster: '박서연', dept: '개발팀', date: '2025.11.08', status: 'available',
+      comments: []
+    },
+    { id: 4, emoji: '📋', title: '화이트보드 (120x90cm)', category: '사무용품',
+      desc: '이사 후 쓸 공간이 없어서 내놓습니다. 마커 4개 포함, 지우개 있음. 깨끗하게 쓴 편이에요.',
+      poster: '정다은', dept: '기획팀', date: '2025.11.07', status: 'available',
+      comments: [
+        { id: 1, author: '윤성민', dept: '개발팀', text: '팀 회의실에 붙여두면 딱 좋겠어요! 가져가겠습니다~', time: '11.07 18:22', confirmed: false },
+      ]
+    },
+    { id: 5, emoji: '🎧', title: 'AirPods Pro (1세대)', category: '전자기기',
+      desc: '이어팁 교체됨. 노이즈 캔슬링 정상 작동. 배터리 80% 잔존. 케이스 외관 흠집 약간.',
+      poster: '강민서', dept: '마케팅팀', date: '2025.11.05', status: 'confirmed',
+      comments: [
+        { id: 1, author: '임수현', dept: '디자인팀', text: '재택근무할 때 집중용으로 쓰고 싶어요!', time: '11.05 10:00', confirmed: true },
+      ]
+    },
+    { id: 6, emoji: '🗄️', title: '3단 서랍장 (목재)', category: '가구·집기',
+      desc: '이케아 ALEX 서랍장입니다. 화이트 색상, 약간 찌그러진 부분 있으나 기능 이상 없음. 직접 운반 가능하신 분.',
+      poster: '황준혁', dept: '총무팀', date: '2025.11.03', status: 'available',
+      comments: []
+    },
+  ];
+
+  let items = loadItems();
+  let currentFilter = 'all';
+
+  function loadItems() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return JSON.parse(JSON.stringify(DEFAULT_ITEMS));
+      return JSON.parse(raw);
+    } catch (e) {
+      console.warn('localStorage load failed:', e);
+      return JSON.parse(JSON.stringify(DEFAULT_ITEMS));
+    }
+  }
+
+  function saveItems() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    } catch (e) {
+      console.warn('localStorage save failed:', e);
+      showToast('⚠️ 저장 공간이 부족할 수 있어요. 사진을 줄여보세요.');
+    }
+  }
+
+  function getStatusLabel(status) {
+    const map = { available: { text: '나눔중', cls: 'available' }, pending: { text: '나눔중', cls: 'available' }, confirmed: { text: '확정완료', cls: 'confirmed' } };
+    return map[status] || map.available;
+  }
+
+  function truncateDesc(desc) {
+    if (!desc) return '';
+    return desc.length <= DESC_PREVIEW_LEN ? desc : desc.slice(0, DESC_PREVIEW_LEN) + '…';
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function getFilteredItems() {
+    if (currentFilter === 'all') return items;
+    if (currentFilter === 'available') return items.filter(i => i.status === 'available' || i.status === 'pending');
+    if (currentFilter === 'confirmed') return items.filter(i => i.status === 'confirmed');
+    return items;
+  }
+
+  function renderGrid() {
+    const filtered = getFilteredItems();
+    const grid = document.getElementById('itemGrid');
+
+    document.getElementById('gridCount').textContent = filtered.length + '개';
+    updateStats();
+
+    if (filtered.length === 0) {
+      grid.innerHTML = '<div class="no-items">해당 조건의 물건이 없습니다.</div>';
+      return;
+    }
+
+    grid.innerHTML = filtered.map((item, i) => {
+      const s = getStatusLabel(item.status);
+      const imgHtml = item.photos && item.photos.length > 0
+        ? `<img class="card-photo" src="${item.photos[0]}" alt="${escapeHtml(item.title)}">`
+        : `<div class="card-img-placeholder">${escapeHtml(item.emoji)}</div>`;
+      return `
+      <div class="card" data-id="${item.id}" style="animation-delay:${i * 0.05}s">
+        <div class="card-img-wrap">
+          ${imgHtml}
+          <div class="card-status">
+            <span class="status-badge ${s.cls}">${s.text}</span>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="card-title">${escapeHtml(item.title)}</div>
+          <div class="card-desc">${escapeHtml(truncateDesc(item.desc))}</div>
+          <div class="card-meta">
+            <div class="card-poster">
+              <div class="avatar">${escapeHtml(item.poster[0] || '?')}</div>
+              <span>${escapeHtml(item.poster)}${item.dept ? ' · ' + escapeHtml(item.dept) : ''}</span>
+            </div>
+            <div class="comment-count">💬 ${item.comments ? item.comments.length : 0}</div>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function updateStats() {
+    document.getElementById('totalCount').textContent = items.length;
+    document.getElementById('availableCount').textContent = items.filter(i => i.status === 'available' || i.status === 'pending').length;
+    document.getElementById('confirmedCount').textContent = items.filter(i => i.status === 'confirmed').length;
+  }
+
+  function filterItems(f, btn) {
+    currentFilter = f;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b.dataset.filter === f));
+    renderGrid();
+  }
+
+  function openDetail(id) {
+    const item = items.find(i => i.id === id);
+    if (!item) return;
+    currentItemId = id;
+    currentSlideIndex = 0;
+
+    const imageArea = document.getElementById('modalImageArea');
+    if (item.photos && item.photos.length > 0) {
+      const dots = item.photos.map((_, i) =>
+        `<div class="photo-dot ${i === 0 ? 'active' : ''}" data-slide="${i}"></div>`
+      ).join('');
+      const arrows = item.photos.length > 1
+        ? `<button class="photo-arrow left" data-dir="-1">‹</button>
+           <button class="photo-arrow right" data-dir="1">›</button>`
+        : '';
+      imageArea.innerHTML = `
+        <div class="modal-photo-slider" id="modalSlider">
+          ${item.photos.map((src, i) =>
+            `<img class="modal-photo-slide ${i === 0 ? 'active' : ''}" src="${src}" alt="photo ${i + 1}">`
+          ).join('')}
+          ${arrows}
+          ${item.photos.length > 1 ? `<div class="photo-nav" id="photoDots">${dots}</div>` : ''}
+        </div>`;
+
+      imageArea.querySelectorAll('.photo-dot').forEach(d => {
+        d.addEventListener('click', () => goSlide(parseInt(d.dataset.slide, 10)));
+      });
+      imageArea.querySelectorAll('.photo-arrow').forEach(a => {
+        a.addEventListener('click', () => goSlide(currentSlideIndex + parseInt(a.dataset.dir, 10)));
+      });
+    } else {
+      imageArea.innerHTML = `<div class="modal-img-placeholder" id="modalEmoji">${escapeHtml(item.emoji)}</div>`;
+    }
+
+    document.getElementById('modalTitle').textContent = item.title;
+    document.getElementById('modalDesc').textContent = item.desc;
+    document.getElementById('modalPoster').textContent = item.dept ? item.poster + ' · ' + item.dept : item.poster;
+    document.getElementById('modalDate').textContent = item.date;
+
+    const s = getStatusLabel(item.status);
+    document.getElementById('modalStatus').textContent = s.text;
+
+    const myPosts = JSON.parse(localStorage.getItem(MY_POSTS_KEY) || '[]');
+    const amIPoster = myPosts.includes(item.id);
+    const isAdminLoggedIn = sessionStorage.getItem(ADMIN_SESSION_KEY) === 'true';
+    const canDelete = amIPoster || isAdminLoggedIn;
+    document.getElementById('modalDeleteBtn').style.display = canDelete ? 'block' : 'none';
+
+    renderComments(item);
+
+    const inputArea = document.getElementById('commentInputArea');
+    inputArea.style.display = item.status === 'confirmed' ? 'none' : 'flex';
+
+    document.getElementById('detailModal').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function goSlide(idx) {
+    const item = items.find(i => i.id === currentItemId);
+    if (!item || !item.photos) return;
+    const len = item.photos.length;
+    currentSlideIndex = ((idx % len) + len) % len;
+    const slider = document.getElementById('modalSlider');
+    if (!slider) return;
+    const slides = slider.querySelectorAll('.modal-photo-slide');
+    const dots = slider.querySelectorAll('.photo-dot');
+    slides.forEach((s, i) => s.classList.toggle('active', i === currentSlideIndex));
+    dots.forEach((d, i) => d.classList.toggle('active', i === currentSlideIndex));
+  }
+
+  function renderComments(item) {
+    const list = document.getElementById('commentsList');
+    const label = document.getElementById('commentCountLabel');
+    const comments = item.comments || [];
+    label.textContent = comments.length > 0 ? `(${comments.length}개)` : '';
+
+    if (comments.length === 0) {
+      list.innerHTML = '<div style="font-size:13px;color:var(--light);padding:16px 0;">아직 신청 댓글이 없어요. 첫 번째로 신청해보세요!</div>';
+      return;
+    }
+
+    const myPosts = JSON.parse(localStorage.getItem(MY_POSTS_KEY) || '[]');
+    const amIPoster = myPosts.includes(item.id);
+    const isAdminLoggedIn = sessionStorage.getItem(ADMIN_SESSION_KEY) === 'true';
+    const canConfirm = (amIPoster || isAdminLoggedIn) && item.status !== 'confirmed';
+    list.innerHTML = comments.map(c => {
+      const isConfirmed = c.confirmed;
+      return `
+      <div class="comment ${isConfirmed ? 'confirmed-comment' : ''}">
+        ${isConfirmed ? '<div class="confirm-badge">✓ 확정</div>' : ''}
+        <div class="comment-header">
+          <div class="comment-author">
+            <div class="avatar" style="background:${hashColor(c.author)}">${escapeHtml(c.author[0] || '?')}</div>
+            <span>${escapeHtml(c.author)}${c.dept ? ' · ' + escapeHtml(c.dept) : ''}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="comment-time">${escapeHtml(c.time)}</span>
+            ${canConfirm
+              ? `<button class="btn-confirm" data-item="${item.id}" data-comment="${c.id}">수령자 확정</button>`
+              : ''}
+          </div>
+        </div>
+        <div class="comment-text">${escapeHtml(c.text)}</div>
+      </div>`;
+    }).join('');
+
+    list.querySelectorAll('.btn-confirm').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        confirmComment(parseInt(btn.dataset.item, 10), parseInt(btn.dataset.comment, 10));
+      });
+    });
+  }
+
+  function hashColor(name) {
+    const colors = ['#0085CD','#2A7A4A','#005192','#0096D6','#7C3AED','#0F1A5C'];
+    let hash = 0;
+    for (let i = 0; i < (name || '').length; i++) hash = (name || '').charCodeAt(i) + ((hash << 5) - hash);
+    return colors[Math.abs(hash) % colors.length];
+  }
+
+  function confirmComment(itemId, commentId) {
+    const item = items.find(i => i.id === itemId);
+    if (!item) return;
+
+    item.comments.forEach(c => { c.confirmed = false; });
+    const comment = item.comments.find(c => c.id === commentId);
+    if (comment) {
+      comment.confirmed = true;
+      item.status = 'confirmed';
+    }
+
+    saveItems();
+    renderComments(item);
+    document.getElementById('commentInputArea').style.display = 'none';
+    document.getElementById('modalStatus').textContent = '확정완료';
+    renderGrid();
+    showToast(`🎉 ${comment.author}님이 수령자로 확정되었습니다!`);
+  }
+
+  function submitComment() {
+    const input = document.getElementById('commentInput');
+    const nameInput = document.getElementById('commentAuthorName');
+    const text = input.value.trim();
+    const author = nameInput.value.trim();
+    if (!text) { showToast('⚠️ 댓글 내용을 입력해주세요.'); return; }
+    if (!author) { showToast('⚠️ 이름을 입력해주세요.'); return; }
+
+    const item = items.find(i => i.id === currentItemId);
+    if (!item) return;
+
+    const now = new Date();
+    const time = `${now.getMonth() + 1}.${now.getDate()} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+    if (!item.comments) item.comments = [];
+    item.comments.push({
+      id: Date.now(),
+      author,
+      dept: '',
+      text,
+      time,
+      confirmed: false,
+    });
+
+    if (item.status === 'available') item.status = 'pending';
+
+    saveItems();
+    input.value = '';
+    renderComments(item);
+    renderGrid();
+    showToast('댓글이 등록되었습니다 ✓');
+  }
+
+  function closeModal() {
+    document.getElementById('detailModal').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  function isAdminLoggedIn() {
+    return sessionStorage.getItem(ADMIN_SESSION_KEY) === 'true';
+  }
+
+  function toggleAdminUI() {
+    if (isAdminLoggedIn()) {
+      doLogout();
+    } else {
+      openLoginModal();
+    }
+  }
+
+  function openLoginModal() {
+    document.getElementById('loginId').value = '';
+    document.getElementById('loginPw').value = '';
+    document.getElementById('loginModal').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeLoginModal() {
+    document.getElementById('loginModal').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  function doLogin() {
+    const id = document.getElementById('loginId').value.trim();
+    const pw = document.getElementById('loginPw').value;
+    if (id !== ADMIN_ID || pw !== ADMIN_PW) {
+      showToast('⚠️ 아이디 또는 비밀번호가 올바르지 않습니다.');
+      return;
+    }
+    sessionStorage.setItem(ADMIN_SESSION_KEY, 'true');
+    closeLoginModal();
+    updateAdminButton();
+    refreshModalIfOpen();
+    showToast('관리자로 로그인되었습니다.');
+  }
+
+  function doLogout() {
+    sessionStorage.removeItem(ADMIN_SESSION_KEY);
+    updateAdminButton();
+    refreshModalIfOpen();
+    showToast('로그아웃되었습니다.');
+  }
+
+  function updateAdminButton() {
+    const btn = document.getElementById('adminBtn');
+    btn.textContent = isAdminLoggedIn() ? '로그아웃' : '관리자';
+  }
+
+  function refreshModalIfOpen() {
+    if (currentItemId) {
+      const item = items.find(i => i.id === currentItemId);
+      if (item) {
+        const myPosts = JSON.parse(localStorage.getItem(MY_POSTS_KEY) || '[]');
+        const amIPoster = myPosts.includes(item.id);
+        const canDelete = amIPoster || isAdminLoggedIn();
+        document.getElementById('modalDeleteBtn').style.display = canDelete ? 'block' : 'none';
+        renderComments(item);
+      }
+    }
+  }
+
+  function deleteItem() {
+    if (!currentItemId) return;
+    if (!confirm('이 물건을 삭제하시겠습니까?')) return;
+
+    const idx = items.findIndex(i => i.id === currentItemId);
+    if (idx === -1) return;
+
+    items.splice(idx, 1);
+
+    const myPosts = JSON.parse(localStorage.getItem(MY_POSTS_KEY) || '[]');
+    const newMyPosts = myPosts.filter(id => id !== currentItemId);
+    localStorage.setItem(MY_POSTS_KEY, JSON.stringify(newMyPosts));
+
+    saveItems();
+    closeModal();
+    currentItemId = null;
+    renderGrid();
+    showToast('물건이 삭제되었습니다.');
+  }
+
+  function handlePhotoUpload(event) {
+    const files = Array.from(event.target.files || []).filter(f => f.type.startsWith('image/'));
+    const remaining = MAX_PHOTOS - uploadedPhotos.length;
+    if (remaining <= 0) { showToast('⚠️ 사진은 최대 5장까지 등록할 수 있어요.'); return; }
+    const toProcess = files.slice(0, remaining);
+    if (toProcess.length === 0) return;
+
+    let loaded = 0;
+    toProcess.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        uploadedPhotos.push(e.target.result);
+        loaded++;
+        if (loaded === toProcess.length) renderPhotoPreview();
+      };
+      reader.readAsDataURL(file);
+    });
+    event.target.value = '';
+  }
+
+  function removePhoto(idx) {
+    uploadedPhotos.splice(idx, 1);
+    renderPhotoPreview();
+  }
+
+  function renderPhotoPreview() {
+    const grid = document.getElementById('photoPreviewGrid');
+    const inner = document.getElementById('photoUploadInner');
+
+    if (uploadedPhotos.length === 0) {
+      grid.style.display = 'none';
+      inner.style.display = 'flex';
+      return;
+    }
+
+    inner.style.display = 'none';
+    grid.style.display = 'grid';
+    grid.innerHTML = uploadedPhotos.map((src, i) => `
+      <div class="photo-thumb-wrap">
+        <img class="photo-thumb" src="${src}" alt="photo ${i + 1}">
+        <button class="photo-thumb-remove" type="button" data-idx="${i}">✕</button>
+      </div>
+    `).join('') + (uploadedPhotos.length < MAX_PHOTOS
+      ? `<div class="photo-add-more" id="photoAddMore">+</div>`
+      : '');
+
+    grid.querySelectorAll('.photo-thumb-remove').forEach(btn => {
+      btn.addEventListener('click', (e) => { e.stopPropagation(); removePhoto(parseInt(btn.dataset.idx, 10)); });
+    });
+    const addMore = document.getElementById('photoAddMore');
+    if (addMore) addMore.addEventListener('click', (e) => { e.stopPropagation(); document.getElementById('photoFileInput').click(); });
+  }
+
+  function openPostModal() {
+    uploadedPhotos = [];
+    selectedEmoji = '📦';
+    renderPhotoPreview();
+    const grid = document.getElementById('emojiGrid');
+    grid.innerHTML = EMOJIS.map(e => `
+      <button class="emoji-btn ${e === selectedEmoji ? 'selected' : ''}" type="button" data-emoji="${escapeHtml(e)}">${e}</button>
+    `).join('');
+    grid.querySelectorAll('.emoji-btn').forEach(btn => {
+      btn.addEventListener('click', () => { selectEmoji(btn, btn.dataset.emoji); });
+    });
+    document.getElementById('postModal').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function selectEmoji(btn, emoji) {
+    selectedEmoji = emoji;
+    document.querySelectorAll('.emoji-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+  }
+
+  function closePostModal() {
+    document.getElementById('postModal').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  function submitPost() {
+    const posterName = document.getElementById('newPosterName').value.trim();
+    const title = document.getElementById('newTitle').value.trim();
+    const desc = document.getElementById('newDesc').value.trim();
+
+    if (!posterName) { showToast('⚠️ 등록자 이름을 입력해주세요.'); return; }
+    if (!title || !desc) { showToast('⚠️ 물건 이름과 설명을 입력해주세요.'); return; }
+
+    const now = new Date();
+    const date = `${now.getFullYear()}.${String(now.getMonth() + 1).padStart(2, '0')}.${String(now.getDate()).padStart(2, '0')}`;
+
+    const newItem = {
+      id: Date.now(),
+      emoji: selectedEmoji,
+      photos: uploadedPhotos.length > 0 ? [...uploadedPhotos] : null,
+      title,
+      desc,
+      poster: posterName,
+      dept: '',
+      date,
+      status: 'available',
+      comments: [],
+    };
+
+    items.unshift(newItem);
+    saveItems();
+
+    const myPosts = JSON.parse(localStorage.getItem(MY_POSTS_KEY) || '[]');
+    myPosts.unshift(newItem.id);
+    localStorage.setItem(MY_POSTS_KEY, JSON.stringify(myPosts));
+
+    document.getElementById('newPosterName').value = '';
+    document.getElementById('newTitle').value = '';
+    document.getElementById('newDesc').value = '';
+    uploadedPhotos = [];
+    closePostModal();
+    currentFilter = 'all';
+    document.querySelectorAll('.filter-btn').forEach((b, i) => b.classList.toggle('active', (b.dataset.filter || '') === 'all'));
+    renderGrid();
+    showToast('🎊 물건이 등록되었습니다!');
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(t._toastTimer);
+    t._toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  document.getElementById('detailModal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+  document.getElementById('postModal').addEventListener('click', function(e) {
+    if (e.target === this) closePostModal();
+  });
+  document.getElementById('loginModal').addEventListener('click', function(e) {
+    if (e.target === this) closeLoginModal();
+  });
+
+  document.getElementById('filterBar')?.addEventListener('click', (e) => {
+    const btn = e.target.closest('.filter-btn[data-filter]');
+    if (btn) filterItems(btn.dataset.filter, btn);
+  });
+
+  document.getElementById('itemGrid').addEventListener('click', (e) => {
+    const card = e.target.closest('.card[data-id]');
+    if (card) openDetail(parseInt(card.dataset.id, 10));
+  });
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const area = document.getElementById('photoUploadArea');
+    const fileInput = document.getElementById('photoFileInput');
+    if (!area || !fileInput) return;
+
+    area.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', handlePhotoUpload);
+
+    area.addEventListener('dragover', (e) => { e.preventDefault(); area.style.borderColor = 'var(--text-dark)'; });
+    area.addEventListener('dragleave', () => { area.style.borderColor = ''; });
+    area.addEventListener('drop', (e) => {
+      e.preventDefault();
+      area.style.borderColor = '';
+      const files = Array.from(e.dataTransfer.files || []).filter(f => f.type.startsWith('image/'));
+      if (!files.length) return;
+      const remaining = MAX_PHOTOS - uploadedPhotos.length;
+      const toProcess = files.slice(0, remaining);
+      let loaded = 0;
+      toProcess.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          uploadedPhotos.push(ev.target.result);
+          loaded++;
+          if (loaded === toProcess.length) renderPhotoPreview();
+        };
+        reader.readAsDataURL(file);
+      });
+    });
+  });
+
+  document.getElementById('commentInput')?.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitComment(); }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      if (document.getElementById('detailModal').classList.contains('open')) closeModal();
+      if (document.getElementById('postModal').classList.contains('open')) closePostModal();
+    }
+  });
+
+  renderGrid();
+  updateAdminButton();
+
+  document.getElementById('loginPw')?.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') doLogin();
+  });
+</script>
+</body>
+</html>
