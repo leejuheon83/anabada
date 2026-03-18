@@ -1089,7 +1089,7 @@
       <label class="form-label">사진 없을 경우 이모지 선택</label>
       <div class="emoji-grid" id="emojiGrid"></div>
     </div>
-    <button class="btn-submit" id="submitPostBtn" onclick="submitPost()">등록하기</button>
+    <button type="button" class="btn-submit" id="submitPostBtn" onclick="submitPost()">등록하기</button>
   </div>
 </div>
 
@@ -1743,13 +1743,15 @@
         desc
       };
 
+      Object.assign(item, updateData);
+      saveItems();
       if (useFirebase) {
-        await db.collection(FIRESTORE_COLLECTION).doc(String(editItemId)).update(updateData);
-        Object.assign(item, updateData);
-        saveItems();
-      } else {
-        Object.assign(item, updateData);
-        saveItems();
+        try {
+          await db.collection(FIRESTORE_COLLECTION).doc(String(editItemId)).update(updateData);
+        } catch (e) {
+          console.warn('Firestore update failed:', e);
+          showToast('⚠️ 클라우드 동기화 실패. 현재 기기에만 저장되었습니다.');
+        }
       }
 
       document.getElementById('newPosterName').value = '';
