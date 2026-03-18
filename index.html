@@ -1074,7 +1074,7 @@
       <textarea class="form-textarea" id="newDesc" placeholder="상태, 구매시기, 사용 횟수 등을 알려주세요"></textarea>
     </div>
     <div class="form-group">
-      <label class="form-label">사진 등록 <span style="color:var(--light);font-weight:400;text-transform:none;letter-spacing:0;">(최대 5장)</span></label>
+      <label class="form-label">사진 등록 <span style="color:var(--light);font-weight:400;text-transform:none;letter-spacing:0;">(최대 5장, 사진이 있으면 우선 표시)</span></label>
       <input type="file" id="photoFileInput" accept="image/*" multiple style="display:none">
       <div class="photo-upload-area" id="photoUploadArea">
         <div class="photo-upload-inner" id="photoUploadInner">
@@ -1085,7 +1085,7 @@
         <div class="photo-preview-grid" id="photoPreviewGrid" style="display:none"></div>
       </div>
     </div>
-    <div class="form-group">
+    <div class="form-group" id="emojiGroup">
       <label class="form-label">사진 없을 경우 이모지 선택</label>
       <div class="emoji-grid" id="emojiGrid"></div>
     </div>
@@ -1623,15 +1623,18 @@
   function renderPhotoPreview() {
     const grid = document.getElementById('photoPreviewGrid');
     const inner = document.getElementById('photoUploadInner');
+    const emojiGroup = document.getElementById('emojiGroup');
 
     if (uploadedPhotos.length === 0) {
       grid.style.display = 'none';
       inner.style.display = 'flex';
+      if (emojiGroup) emojiGroup.style.display = 'block';
       return;
     }
 
     inner.style.display = 'none';
     grid.style.display = 'grid';
+    if (emojiGroup) emojiGroup.style.display = 'none';
     grid.innerHTML = uploadedPhotos.map((src, i) => `
       <div class="photo-thumb-wrap">
         <img class="photo-thumb" src="${src}" alt="photo ${i + 1}">
