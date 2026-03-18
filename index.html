@@ -1128,55 +1128,19 @@
   let editItemId = null;
   let selectedEmoji = '📦';
 
-  const DEFAULT_ITEMS = [
-    { id: 1, emoji: '💻', title: 'MacBook Pro 2019 (인텔)', category: '전자기기',
-      desc: '16인치 인텔 맥북 프로입니다. 배터리 교체 완료, 외관 스크래치 약간 있음. 사용감 있지만 성능 이상 없어요.',
-      poster: '이수진', dept: '경영지원팀', date: '2025.11.12', status: 'pending',
-      comments: [
-        { id: 1, author: '박민준', dept: '마케팅팀', text: '집에서 개인 공부용으로 쓰고 싶습니다! 잘 사용하겠습니다 🙏', time: '11.13 09:21', confirmed: false },
-        { id: 2, author: '최유리', dept: '디자인팀', text: '디자인 작업 보조용으로 활용하고 싶어요. 소중히 사용할게요!', time: '11.13 11:05', confirmed: false },
-        { id: 3, author: '한동훈', dept: '개발팀', text: '테스트 환경 구축용으로 필요합니다. 잘 관리하겠습니다.', time: '11.13 14:30', confirmed: false },
-      ]
-    },
-    { id: 2, emoji: '🪑', title: '허먼밀러 의자 (에어론 2세대)', category: '가구·집기',
-      desc: '에어론 2세대 C사이즈. 팔걸이 높이조절 약간 삐걱거림 외에는 정상. 허리 지지대 양호.',
-      poster: '김태호', dept: '재무팀', date: '2025.11.10', status: 'confirmed',
-      comments: [
-        { id: 1, author: '송지은', dept: '인사팀', text: '허리가 안 좋아서 정말 필요해요. 오래오래 소중히 쓸게요!', time: '11.10 16:00', confirmed: true },
-        { id: 2, author: '오재원', dept: '영업팀', text: '저도 쓰고 싶은데 혹시 안되면 다음 기회에ㅠ', time: '11.11 09:14', confirmed: false },
-      ]
-    },
-    { id: 3, emoji: '🖥️', title: '27인치 4K 모니터 (LG)', category: '전자기기',
-      desc: 'LG 27UK850 UHD 4K 모니터입니다. USB-C 지원. 사용기간 2년, 패널 상태 양호. 전원 케이블만 포함.',
-      poster: '박서연', dept: '개발팀', date: '2025.11.08', status: 'available',
-      comments: []
-    },
-    { id: 4, emoji: '📋', title: '화이트보드 (120x90cm)', category: '사무용품',
-      desc: '이사 후 쓸 공간이 없어서 내놓습니다. 마커 4개 포함, 지우개 있음. 깨끗하게 쓴 편이에요.',
-      poster: '정다은', dept: '기획팀', date: '2025.11.07', status: 'available',
-      comments: [
-        { id: 1, author: '윤성민', dept: '개발팀', text: '팀 회의실에 붙여두면 딱 좋겠어요! 가져가겠습니다~', time: '11.07 18:22', confirmed: false },
-      ]
-    },
-    { id: 5, emoji: '🎧', title: 'AirPods Pro (1세대)', category: '전자기기',
-      desc: '이어팁 교체됨. 노이즈 캔슬링 정상 작동. 배터리 80% 잔존. 케이스 외관 흠집 약간.',
-      poster: '강민서', dept: '마케팅팀', date: '2025.11.05', status: 'confirmed',
-      comments: [
-        { id: 1, author: '임수현', dept: '디자인팀', text: '재택근무할 때 집중용으로 쓰고 싶어요!', time: '11.05 10:00', confirmed: true },
-      ]
-    },
-    { id: 6, emoji: '🗄️', title: '3단 서랍장 (목재)', category: '가구·집기',
-      desc: '이케아 ALEX 서랍장입니다. 화이트 색상, 약간 찌그러진 부분 있으나 기능 이상 없음. 직접 운반 가능하신 분.',
-      poster: '황준혁', dept: '총무팀', date: '2025.11.03', status: 'available',
-      comments: []
-    },
-  ];
+  const DEFAULT_ITEMS = [];
 
   let items = loadItems();
   let currentFilter = 'all';
 
   function loadItems() {
     try {
+      const RESET_VERSION = '2';
+      if (localStorage.getItem('nanum_version') !== RESET_VERSION) {
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(MY_POSTS_KEY);
+        localStorage.setItem('nanum_version', RESET_VERSION);
+      }
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return JSON.parse(JSON.stringify(DEFAULT_ITEMS));
       return JSON.parse(raw);
